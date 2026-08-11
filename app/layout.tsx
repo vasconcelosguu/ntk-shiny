@@ -22,11 +22,23 @@ export default function RootLayout({
             </Link>
 
             <nav className="nav">
-              {[0, 1, 2, 3, 4, 5, 6, 7].map((tier) => (
-                <Link key={tier} href={`/tiers/${tier}`}>
-                  T{tier}
-                </Link>
-              ))}
+              <Link href="/">Home</Link>
+
+              <div className="nav-dropdown">
+                <span className="nav-dropdown-title">Tiers ▾</span>
+
+                <div className="nav-dropdown-menu">
+                  {[0, 1, 2, 3, 4, 5, 6, 7].map((tier) => (
+                    <Link key={tier} href={`/tiers/${tier}`}>
+                      Tier {tier}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+
+              <Link href="/guia">Guia</Link>
+
+              <Link href="/about">About</Link>
             </nav>
           </div>
         </header>
@@ -43,3 +55,4 @@ export default function RootLayout({
     </html>
   );
 }
+
