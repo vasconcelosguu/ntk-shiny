@@ -17,28 +17,47 @@ export default function RootLayout({
       <body>
         <header className="site-header">
           <div className="header-inner">
+
             <Link href="/" className="logo">
-              <span>Never</span>TakeBan
+              <img
+                src="/images/logo.png"
+                alt="NeverTakeBan"
+              />
             </Link>
 
             <nav className="nav">
-              <Link href="/">Home</Link>
+              <Link href="/">
+                Home
+              </Link>
 
               <div className="nav-dropdown">
-                <span className="nav-dropdown-title">Tiers ▾</span>
+                <span className="nav-dropdown-title">
+                  Tiers ▾
+                </span>
 
                 <div className="nav-dropdown-menu">
                   {[0, 1, 2, 3, 4, 5, 6, 7].map((tier) => (
-                    <Link key={tier} href={`/tiers/${tier}`}>
+                    <Link
+                      key={tier}
+                      href={`/tiers/${tier}`}
+                    >
                       Tier {tier}
                     </Link>
                   ))}
                 </div>
               </div>
 
-              <Link href="/guia">Guia</Link>
+              <Link href="/players">
+                Players
+              </Link>
 
-              <Link href="/about">About</Link>
+              <Link href="/guia">
+                Guia
+              </Link>
+
+              <Link href="/about">
+                About
+              </Link>
             </nav>
           </div>
         </header>
@@ -48,11 +67,13 @@ export default function RootLayout({
         <footer className="footer">
           <div className="footer-inner">
             <strong>NeverTakeBan</strong>
-            <span>Shiny Database • PokeMMO</span>
+
+            <span>
+              Shiny Database • PokeMMO
+            </span>
           </div>
         </footer>
       </body>
     </html>
   );
 }
-
