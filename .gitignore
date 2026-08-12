@@ -1,26 +1,29 @@
+gitignore
 # Dependencies
-node_modules/
+/node_modules
 
 # Next.js
-.next/
-out/
-
-# Vercel
-.vercel/
+/.next/
+/out/
 
 # Production
-build/
-dist/
+/build
 
-# Environment variables
+# Local environment files
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
 
-# Logs
-*.log
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -29,18 +32,3 @@ pnpm-debug.log*
 # OS
 .DS_Store
 Thumbs.db
-
-# IDE
-.vscode/*
-!.vscode/extensions.json
-!.vscode/settings.json
-
-# TypeScript
-*.tsbuildinfo
-
-# Testing
-coverage/
-
-# Temporary files
-*.tmp
-*.temp
