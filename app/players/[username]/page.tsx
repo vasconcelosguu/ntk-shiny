@@ -29,14 +29,62 @@ export default async function ShinyPlayerPage({
 
   const decodedUsername = decodeURIComponent(username);
 
+  console.log(
+    `[SHINY PAGE] URL username: ${username}`
+  );
+
+  console.log(
+    `[SHINY PAGE] Decoded username: ${decodedUsername}`
+  );
+
   const player = getShinyPlayer(decodedUsername);
 
+  console.log(
+    `[SHINY PAGE] Player encontrado:`,
+    player
+  );
+
   if (!player) {
+    console.error(
+      `[SHINY PAGE] Player não encontrado: ${decodedUsername}`
+    );
+
     notFound();
   }
 
+  console.log(
+    `[SHINY PAGE] Carregando player: ${decodedUsername}`
+  );
+
+  console.log(
+    `[SHINY PAGE] ShinyBoard username: ${player.shinyboardUsername}`
+  );
+
+  console.log(
+    `[SHINY PAGE] Chamando getShinyBoardProfile...`
+  );
+
   const profile = await getShinyBoardProfile(
     player.shinyboardUsername
+  );
+
+  console.log(
+    `[SHINY PAGE] Perfil recebido`
+  );
+
+  console.log(
+    `[SHINY PAGE] Total de shinies:`,
+    profile.totalShinies
+  );
+
+  console.log(
+    `[SHINY PAGE] Total de encounters:`,
+    profile.totalEncounters
+  );
+
+  console.log(
+    `[SHINY PAGE] Shinies recebidos:`,
+    profile.shinies.length
   );
 
   /*
@@ -47,17 +95,31 @@ export default async function ShinyPlayerPage({
    * Isso evita depender de uma URL de imagem
    * fornecida pelo ShinyBoard.
    */
+
+  console.log(
+    `[SHINY PAGE] Iniciando busca das sprites...`
+  );
+
   const shinies = await Promise.all(
     profile.shinies.map(async (shiny) => {
       let sprite: string | null = null;
+
+      console.log(
+        `[SPRITE] Buscando sprite para: ${shiny.pokemon}`
+      );
 
       try {
         sprite = await getPokemonShinySprite(
           shiny.pokemon
         );
+
+        console.log(
+          `[SPRITE] Resultado para ${shiny.pokemon}:`,
+          sprite
+        );
       } catch (error) {
         console.error(
-          `Erro ao buscar sprite de ${shiny.pokemon}:`,
+          `[SPRITE] Erro ao buscar sprite de ${shiny.pokemon}:`,
           error
         );
       }
@@ -67,6 +129,15 @@ export default async function ShinyPlayerPage({
         sprite,
       };
     })
+  );
+
+  console.log(
+    `[SHINY PAGE] Busca de sprites finalizada`
+  );
+
+  console.log(
+    `[SHINY PAGE] Total de cards:`,
+    shinies.length
   );
 
   return (
