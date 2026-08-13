@@ -66,28 +66,19 @@ export async function getShinyBoardProfile(
 
     const html = await response.text();
 
-    /*
-     * Primeiro pegamos os Pokémon.
-     */
     const parsedShinies = parseShinies(html);
 
-    /*
-     * Agora buscamos todas as sprites em paralelo.
-     *
-     * Isso é importante para não fazer:
-     *
-     * Pokémon 1 → espera
-     * Pokémon 2 → espera
-     * Pokémon 3 → espera
-     *
-     * Fazemos todas simultaneamente.
-     */
     const shinies = await Promise.all(
       parsedShinies.map(async (shiny) => {
         const sprite =
           await getPokemonShinySprite(
             shiny.displayName
           );
+
+        console.log(
+          `Sprite ${shiny.displayName}:`,
+          sprite
+        );
 
         return {
           ...shiny,
@@ -172,9 +163,6 @@ function parseShinies(
     const encountersText =
       cells[cells.length - 1];
 
-    /*
-     * Ignorar cabeçalhos.
-     */
     const lowerName =
       pokemonName.toLowerCase();
 
@@ -185,10 +173,6 @@ function parseShinies(
       continue;
     }
 
-    /*
-     * Evitar capturar conteúdo
-     * que não seja Pokémon.
-     */
     if (
       !isLikelyPokemonName(
         pokemonName

@@ -138,21 +138,22 @@ export async function getPokemonShinySprite(
       (await response.json()) as PokemonApiResponse;
 
     /*
-     * Primeiro: sprite shiny normal.
-     */
-    if (data.sprites.front_shiny) {
-      return data.sprites.front_shiny;
-    }
-
-    /*
-     * Segundo: sprite do Showdown.
-     * Normalmente é animada.
+     * Primeiro: tenta a sprite do Showdown.
+     *
+     * Essa normalmente é animada.
      */
     const showdown =
       data.sprites.other?.showdown?.front_shiny;
 
     if (showdown) {
       return showdown;
+    }
+
+    /*
+     * Segundo: sprite shiny normal.
+     */
+    if (data.sprites.front_shiny) {
+      return data.sprites.front_shiny;
     }
 
     /*
