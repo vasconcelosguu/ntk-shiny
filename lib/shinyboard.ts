@@ -1,10 +1,22 @@
-import { getPokemonShinySprite } from "./pokemon";
+import {
+  getPokemonShinySprites,
+} from "./pokemon";
 
 export type ShinyEntry = {
   pokemon: string;
   displayName: string;
   encounters: number;
+
+  /*
+   * Primeira URL da sprite.
+   */
   sprite: string | null;
+
+  /*
+   * URLs alternativas caso a primeira
+   * não carregue no navegador.
+   */
+  spriteUrls: string[];
 };
 
 export type ShinyBoardProfile = {
@@ -14,6 +26,10 @@ export type ShinyBoardProfile = {
   shinies: ShinyEntry[];
 };
 
+/**
+ * Converte números vindos do HTML
+ * do ShinyBoard.
+ */
 function parseNumber(value: string): number {
   const normalized = value
     .replace(/\./g, "")
@@ -23,7 +39,12 @@ function parseNumber(value: string): number {
   return Number(normalized) || 0;
 }
 
-function normalizePokemonName(name: string): string {
+/**
+ * Normaliza o nome do Pokémon.
+ */
+function normalizePokemonName(
+  name: string
+): string {
   return name
     .trim()
     .replace(/♀/g, "-f")
@@ -34,12 +55,16 @@ function normalizePokemonName(name: string): string {
     .toLowerCase();
 }
 
+/**
+ * Busca o perfil do ShinyBoard.
+ */
 export async function getShinyBoardProfile(
   username: string
 ): Promise<ShinyBoardProfile> {
   const url =
     `https://www.shinyboard.net/users/` +
-    `${encodeURIComponent(username)}?tab=shinies`;
+    `${encodeURIComponent(username)}` +
+    `?tab=shinies`;
 
   try {
     const response = await fetch(url, {
@@ -58,7 +83,7 @@ export async function getShinyBoardProfile(
 
     if (!response.ok) {
       console.error(
-        `ShinyBoard retornou ${response.status} para ${username}`
+        `[SHINYBOARD] Status ${response.status} para ${username}`
       );
 
       return emptyProfile(username);
@@ -66,42 +91,70 @@ export async function getShinyBoardProfile(
 
     const html = await response.text();
 
-    const parsedShinies = parseShinies(html);
+    /*
+     * Primeiro encontramos os Shinies
+     * no HTML do ShinyBoard.
+     */
+    const parsedShinies =
+      parseShinies(html);
 
-    const shinies = await Promise.all(
-      parsedShinies.map(async (shiny) => {
-        const sprite =
-          await getPokemonShinySprite(
-            shiny.displayName
-          );
+    /*
+     * Depois buscamos as sprites.
+     *
+     * Todas são buscadas em paralelo.
+     */
+    const shinies =
+      await Promise.all(
+        parsedShinies.map(
+          async (shiny) => {
+            const spriteUrls =
+              await getPokemonShinySprites(
+                shiny.displayName
+              );
 
-        console.log(
-          `Sprite ${shiny.displayName}:`,
-          sprite
-        );
+            const sprite =
+              spriteUrls[0] ?? null;
 
-        return {
-          ...shiny,
-          sprite,
-        };
-      })
-    );
+            console.log(
+              `[SHINY] ${shiny.displayName}`
+            );
 
-    const totalEncounters = shinies.reduce(
-      (sum, shiny) =>
-        sum + shiny.encounters,
-      0
-    );
+            console.log(
+              `[SHINY] Sprite principal:`,
+              sprite
+            );
+
+            console.log(
+              `[SHINY] Fallbacks:`,
+              spriteUrls
+            );
+
+            return {
+              ...shiny,
+              sprite,
+              spriteUrls,
+            };
+          }
+        )
+      );
+
+    const totalEncounters =
+      shinies.reduce(
+        (sum, shiny) =>
+          sum + shiny.encounters,
+        0
+      );
 
     return {
       username,
-      totalShinies: shinies.length,
+      totalShinies:
+        shinies.length,
       totalEncounters,
       shinies,
     };
   } catch (error) {
     console.error(
-      `Erro ao buscar ShinyBoard de ${username}:`,
+      `[SHINYBOARD] Erro para ${username}:`,
       error
     );
 
@@ -109,6 +162,9 @@ export async function getShinyBoardProfile(
   }
 }
 
+/**
+ * Perfil vazio em caso de erro.
+ */
 function emptyProfile(
   username: string
 ): ShinyBoardProfile {
@@ -120,6 +176,9 @@ function emptyProfile(
   };
 }
 
+/**
+ * Extrai os Shinies do HTML.
+ */
 function parseShinies(
   html: string
 ): ShinyEntry[] {
@@ -134,35 +193,51 @@ function parseShinies(
   let rowMatch: RegExpExecArray | null;
 
   while (
-    (rowMatch = rowRegex.exec(html)) !== null
+    (rowMatch =
+      rowRegex.exec(html)) !== null
   ) {
-    const rowHtml = rowMatch[1];
+    const rowHtml =
+      rowMatch[1];
 
     const cells: string[] = [];
 
-    let cellMatch: RegExpExecArray | null;
+    let cellMatch:
+      | RegExpExecArray
+      | null;
 
     while (
-      (cellMatch = cellRegex.exec(rowHtml)) !== null
+      (cellMatch =
+        cellRegex.exec(
+          rowHtml
+        )) !== null
     ) {
-      const text = stripHtml(
-        cellMatch[1]
-      );
+      const text =
+        stripHtml(
+          cellMatch[1]
+        );
 
       if (text) {
         cells.push(text);
       }
     }
 
+    /*
+     * Precisamos de pelo menos
+     * nome + encounters.
+     */
     if (cells.length < 2) {
       continue;
     }
 
-    const pokemonName = cells[0];
+    const pokemonName =
+      cells[0];
 
     const encountersText =
       cells[cells.length - 1];
 
+    /*
+     * Ignorar cabeçalhos.
+     */
     const lowerName =
       pokemonName.toLowerCase();
 
@@ -173,6 +248,10 @@ function parseShinies(
       continue;
     }
 
+    /*
+     * Evita pegar linhas que claramente
+     * não são Pokémon.
+     */
     if (
       !isLikelyPokemonName(
         pokemonName
@@ -198,6 +277,8 @@ function parseShinies(
       encounters,
 
       sprite: null,
+
+      spriteUrls: [],
     });
   }
 
@@ -206,6 +287,9 @@ function parseShinies(
   );
 }
 
+/**
+ * Remove HTML e entidades básicas.
+ */
 function stripHtml(
   value: string
 ): string {
@@ -245,6 +329,10 @@ function stripHtml(
     .trim();
 }
 
+/**
+ * Verifica se o texto pode ser
+ * um nome de Pokémon.
+ */
 function isLikelyPokemonName(
   name: string
 ): boolean {
@@ -255,19 +343,32 @@ function isLikelyPokemonName(
   );
 }
 
+/**
+ * Remove Pokémon duplicados.
+ */
 function deduplicateShinies(
   shinies: ShinyEntry[]
 ): ShinyEntry[] {
   const map =
-    new Map<string, ShinyEntry>();
+    new Map<
+      string,
+      ShinyEntry
+    >();
 
-  for (const shiny of shinies) {
+  for (
+    const shiny of shinies
+  ) {
     const key =
       shiny.displayName
         .toLowerCase();
 
-    if (!map.has(key)) {
-      map.set(key, shiny);
+    if (
+      !map.has(key)
+    ) {
+      map.set(
+        key,
+        shiny
+      );
     }
   }
 
