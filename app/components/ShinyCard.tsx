@@ -1,5 +1,9 @@
 import ShinyActions from "./ShinyActions";
 
+import {
+  getPokemonShinySprite,
+} from "../../lib/pokemon";
+
 type ShinyCardProps = {
   id: string;
   username: string;
@@ -10,12 +14,6 @@ type ShinyCardProps = {
   region?: string | null;
   location?: string | null;
   canManage?: boolean;
-};
-
-type PokemonResponse = {
-  sprites: {
-    front_shiny: string | null;
-  };
 };
 
 export default async function ShinyCard({
@@ -29,40 +27,22 @@ export default async function ShinyCard({
   location,
   canManage = false,
 }: ShinyCardProps) {
-  const pokemonName = pokemon
-    .toLowerCase()
-    .trim()
-    .replaceAll(" ", "-");
-
-  let shinySprite: string | null = null;
-
-  try {
-    const response = await fetch(
-      `https://pokeapi.co/api/v2/pokemon/${pokemonName}`,
-      {
-        next: {
-          revalidate: 86400,
-        },
-      }
+  /*
+   * Busca a sprite shiny através da função
+   * centralizada em lib/pokemon.ts.
+   */
+  const shinySprite =
+    await getPokemonShinySprite(
+      pokemon
     );
-
-    if (response.ok) {
-      const data: PokemonResponse =
-        await response.json();
-
-      shinySprite =
-        data.sprites.front_shiny;
-    }
-  } catch (error) {
-    console.error(
-      `Erro ao buscar sprite shiny de ${pokemon}:`,
-      error
-    );
-  }
 
   return (
     <article className="shiny-card">
+
+      {/* TOP */}
+
       <div className="shiny-card-top">
+
         <span className="shiny-badge">
           ✦ SHINY
         </span>
@@ -72,28 +52,44 @@ export default async function ShinyCard({
             <span className="encounter-badge">
               {encounters.toLocaleString(
                 "pt-BR"
-              )} enc.
+              )}{" "}
+              enc.
             </span>
           )}
+
       </div>
 
+      {/* IMAGE */}
+
       <div className="shiny-card-image">
+
         {shinySprite ? (
+
           <img
             src={shinySprite}
             alt={`Shiny ${pokemon}`}
             width={180}
             height={180}
+            loading="lazy"
           />
+
         ) : (
+
           <div className="shiny-card-placeholder">
             ?
           </div>
+
         )}
+
       </div>
 
+      {/* CONTENT */}
+
       <div className="shiny-card-content">
-        <h3>{pokemon}</h3>
+
+        <h3>
+          {pokemon}
+        </h3>
 
         {nickname && (
           <p className="shiny-nickname">
@@ -102,35 +98,55 @@ export default async function ShinyCard({
         )}
 
         <div className="shiny-details">
+
           {method && (
             <div>
-              <span>MÉTODO</span>
-              <strong>{method}</strong>
+              <span>
+                MÉTODO
+              </span>
+
+              <strong>
+                {method}
+              </strong>
             </div>
           )}
 
           {region && (
             <div>
-              <span>REGIÃO</span>
-              <strong>{region}</strong>
+              <span>
+                REGIÃO
+              </span>
+
+              <strong>
+                {region}
+              </strong>
             </div>
           )}
 
           {location && (
             <div>
-              <span>LOCAL</span>
-              <strong>{location}</strong>
+              <span>
+                LOCAL
+              </span>
+
+              <strong>
+                {location}
+              </strong>
             </div>
           )}
+
         </div>
 
         {canManage && (
           <ShinyActions
-            shinyId={id}
+            id={id}
             username={username}
+            pokemon={pokemon}
           />
         )}
+
       </div>
+
     </article>
   );
 }
