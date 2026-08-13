@@ -1,119 +1,224 @@
 import Link from "next/link";
-import { teamCategories } from "../../../lib/team";
+import { notFound } from "next/navigation";
+import { getShinyPlayer } from "../../../lib/players";
+import { getShinyBoardProfile } from "../../../lib/shinyboard";
+import { getPokemonShinySprite } from "../../../lib/pokemon";
 
-export default function Home() {
+type Props = {
+  params: Promise<{
+    username: string;
+  }>;
+};
+
+export const revalidate = 3600;
+
+export async function generateStaticParams() {
+  const { shinyPlayers } = await import(
+    "../../../lib/players"
+  );
+
+  return shinyPlayers.map((player) => ({
+    username: player.shinyboardUsername,
+  }));
+}
+
+export default async function ShinyPlayerPage({
+  params,
+}: Props) {
+  const { username } = await params;
+
+  const decodedUsername = decodeURIComponent(username);
+
+  const player = getShinyPlayer(decodedUsername);
+
+  if (!player) {
+    notFound();
+  }
+
+  const profile = await getShinyBoardProfile(
+    player.shinyboardUsername
+  );
+
+  /*
+   * O ShinyBoard fornece o nome do Pokémon.
+   *
+   * A sprite é buscada separadamente na API.
+   *
+   * Isso evita depender de uma URL de imagem
+   * fornecida pelo ShinyBoard.
+   */
+  const shinies = await Promise.all(
+    profile.shinies.map(async (shiny) => {
+      let sprite: string | null = null;
+
+      try {
+        sprite = await getPokemonShinySprite(
+          shiny.pokemon
+        );
+      } catch (error) {
+        console.error(
+          `Erro ao buscar sprite de ${shiny.pokemon}:`,
+          error
+        );
+      }
+
+      return {
+        ...shiny,
+        sprite,
+      };
+    })
+  );
+
   return (
-    <div className="min-h-screen">
-      {/* HERO */}
+    <main className="min-h-screen bg-[#080b14] text-white">
+      {/* =====================================================
+          HERO
+      ====================================================== */}
+
       <section className="border-b border-white/[0.06] bg-gradient-to-b from-violet-950/20 to-transparent">
-        <div className="mx-auto max-w-7xl px-6 pb-16 pt-20">
-          <div className="max-w-3xl">
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-violet-500/20 bg-violet-500/10 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-violet-400">
-              PokeMMO • Team Portal
+        <div className="mx-auto max-w-7xl px-6 pb-14 pt-16">
+          <Link
+            href="/hunt/shiny/players"
+            className="text-sm font-semibold text-gray-500 transition hover:text-violet-400"
+          >
+            ← Voltar para Players
+          </Link>
+
+          <div className="mt-8 flex flex-col justify-between gap-8 md:flex-row md:items-end">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-violet-400">
+                Shiny Collection
+              </p>
+
+              <h1 className="mt-3 text-4xl font-black tracking-tight md:text-5xl">
+                {player.username}
+              </h1>
+
+              <p className="mt-3 text-gray-500">
+                Coleção sincronizada com o ShinyBoard.
+              </p>
             </div>
 
-            <h1 className="text-5xl font-black tracking-tight text-white md:text-6xl">
-              neverTakeBan
-            </h1>
+            <a
+              href={`https://www.shinyboard.net/users/${encodeURIComponent(
+                player.shinyboardUsername
+              )}?tab=shinies`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex w-fit items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.025] px-4 py-3 text-sm font-bold text-gray-400 transition hover:border-violet-500/30 hover:bg-violet-500/[0.05] hover:text-violet-400"
+            >
+              Abrir ShinyBoard
+              <span>↗</span>
+            </a>
+          </div>
 
-            <p className="mt-5 max-w-2xl text-lg leading-8 text-gray-400">
-              Central de estratégias, guias, builds e informações
-              utilizadas pelo time no PokeMMO.
-            </p>
+          {/* STATS */}
+
+          <div className="mt-8 grid max-w-xl grid-cols-2 gap-3">
+            <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-5">
+              <span className="block text-3xl font-black">
+                {profile.totalShinies}
+              </span>
+
+              <span className="mt-1 block text-xs font-bold uppercase tracking-widest text-gray-600">
+                Shinies
+              </span>
+            </div>
+
+            <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-5">
+              <span className="block text-3xl font-black">
+                {profile.totalEncounters.toLocaleString(
+                  "pt-BR"
+                )}
+              </span>
+
+              <span className="mt-1 block text-xs font-bold uppercase tracking-widest text-gray-600">
+                Encounters
+              </span>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* CATEGORIAS */}
+      {/* =====================================================
+          SHINY GRID
+      ====================================================== */}
+
       <section className="mx-auto max-w-7xl px-6 py-12">
-        <div className="space-y-12">
-          {teamCategories.map((category) => (
-            <section key={category.slug}>
-              {/* CATEGORY HEADER */}
-              <div className="mb-5 flex items-end justify-between gap-4">
-                <div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">{category.icon}</span>
+        {shinies.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-white/[0.08] bg-white/[0.015] p-10 text-center">
+            <div className="text-4xl">✨</div>
 
-                    <h2 className="text-2xl font-black tracking-tight text-white">
-                      {category.name}
-                    </h2>
-                  </div>
+            <h2 className="mt-4 font-bold text-white">
+              Nenhum Shiny encontrado
+            </h2>
 
-                  <p className="mt-1 text-sm text-gray-500">
-                    {category.description}
-                  </p>
-                </div>
+            <p className="mt-2 text-sm text-gray-500">
+              Não foi possível encontrar Shinies registrados
+              para este player no momento.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+            {shinies.map((shiny, index) => (
+              <div
+                key={`${shiny.displayName}-${index}`}
+                className="group overflow-hidden rounded-2xl border border-white/[0.07] bg-[#0d111c] transition-all duration-200 hover:-translate-y-1 hover:border-violet-500/30 hover:bg-[#111625] hover:shadow-xl hover:shadow-violet-950/20"
+              >
+                {/* SPRITE */}
 
-                {category.channels.length > 0 && (
-                  <span className="hidden rounded-full border border-white/[0.07] bg-white/[0.025] px-3 py-1 text-xs font-semibold text-gray-500 sm:block">
-                    {category.channels.length}{" "}
-                    {category.channels.length === 1
-                      ? "seção"
-                      : "seções"}
-                  </span>
-                )}
-              </div>
+                <div className="relative flex aspect-square items-center justify-center overflow-hidden bg-[#080b14]">
+                  {/* Glow */}
 
-              {/* CHANNELS */}
-              {category.channels.length > 0 ? (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {category.channels.map((channel) => (
-                    <Link
-                      key={channel.slug}
-                      href={`/${category.slug}/${channel.slug}`}
-                      className="group rounded-2xl border border-white/[0.07] bg-[#0d111c] p-5 transition duration-200 hover:-translate-y-1 hover:border-violet-500/30 hover:bg-[#111625] hover:shadow-2xl hover:shadow-violet-950/20"
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/[0.06] bg-white/[0.035] text-xl">
-                          {channel.icon}
-                        </div>
+                  <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(139,92,246,0.10),transparent_65%)] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
-                        <span className="text-sm text-gray-600 transition group-hover:translate-x-1 group-hover:text-violet-400">
-                          →
-                        </span>
-                      </div>
+                  {shiny.sprite ? (
+                    <img
+                      src={shiny.sprite}
+                      alt={`Shiny ${shiny.displayName}`}
+                      width={160}
+                      height={160}
+                      loading="lazy"
+                      className="relative h-32 w-32 object-contain transition-transform duration-300 group-hover:scale-110"
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center">
+                      <span className="text-3xl opacity-30">
+                        ?
+                      </span>
 
-                      <h3 className="mt-5 text-lg font-bold text-white">
-                        {channel.name}
-                      </h3>
-
-                      <p className="mt-2 min-h-10 text-sm leading-5 text-gray-500">
-                        {channel.description}
-                      </p>
-
-                      <div className="mt-5 border-t border-white/[0.06] pt-4 text-xs font-bold uppercase tracking-wider text-gray-600 transition group-hover:text-violet-400">
-                        Ver estratégias
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              ) : (
-                <Link
-                  href={`/${category.slug}`}
-                  className="group block rounded-2xl border border-dashed border-white/[0.08] bg-white/[0.015] p-6 transition hover:border-violet-500/30 hover:bg-violet-500/[0.03]"
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-bold text-white">
-                        Área em construção
-                      </h3>
-
-                      <p className="mt-1 text-sm text-gray-500">
-                        Novos conteúdos serão adicionados aqui.
-                      </p>
+                      <span className="mt-2 text-[10px] font-bold uppercase tracking-widest text-gray-700">
+                        Sprite indisponível
+                      </span>
                     </div>
+                  )}
+                </div>
 
-                    <span className="text-gray-600 transition group-hover:translate-x-1 group-hover:text-violet-400">
-                      →
+                {/* INFO */}
+
+                <div className="p-4">
+                  <h2 className="truncate font-bold text-white">
+                    {shiny.displayName}
+                  </h2>
+
+                  <p className="mt-1 truncate text-xs text-gray-600">
+                    {shiny.pokemon}
+                  </p>
+
+                  <div className="mt-3 border-t border-white/[0.06] pt-3">
+                    <span className="text-xs font-semibold text-gray-500">
+                      {shiny.encounters.toLocaleString(
+                        "pt-BR"
+                      )}{" "}
+                      encounters
                     </span>
                   </div>
-                </Link>
-              )}
-            </section>
-          ))}
-        </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
-    </div>
+    </main>
   );
 }
