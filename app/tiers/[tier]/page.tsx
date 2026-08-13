@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+
 import { tiers, dex } from "../../../lib/data";
+import TierPokemonGrid from "../../components/TierPokemonGrid";
 
 export const revalidate = 86400;
 
@@ -8,35 +10,6 @@ export function generateStaticParams() {
   return Object.keys(tiers).map((tier) => ({
     tier,
   }));
-}
-
-async function getShinySprite(name: string) {
-  const id = dex[name];
-
-  if (!id) return null;
-
-  try {
-    const response = await fetch(
-      `https://pokeapi.co/api/v2/pokemon/${id}`,
-      {
-        next: {
-          revalidate: 86400,
-        },
-      }
-    );
-
-    if (response.ok) {
-      const data = await response.json();
-
-      if (data.sprites?.front_shiny) {
-        return data.sprites.front_shiny;
-      }
-    }
-  } catch {
-    // fallback abaixo
-  }
-
-  return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/${id}.png`;
 }
 
 export default async function TierPage({
@@ -52,117 +25,78 @@ export default async function TierPage({
     notFound();
   }
 
-  const sprites = await Promise.all(
-    data.pokemon.map(async (name) => {
-      const sprite = await getShinySprite(name);
-
-      return {
-        name,
-        sprite,
-      };
-    })
-  );
+  const pokemon = data.pokemon
+    .map((name) => ({
+      name,
+      id: dex[name],
+    }))
+    .filter((pokemon) => pokemon.id);
 
   return (
-    <div className="page">
-      <section className="tier-hero">
-        <div className="container">
-          <Link href="/" className="back-link">
-            ← Voltar para tiers
+    <main className="min-h-screen bg-[#080b14] text-white">
+      {/* HEADER */}
+      <section className="border-b border-white/[0.06] bg-gradient-to-b from-violet-950/20 to-transparent">
+        <div className="mx-auto max-w-7xl px-6 pb-12 pt-12">
+          <Link
+            href="/hunt/shiny/tiers"
+            className="text-sm font-semibold text-gray-500 transition hover:text-violet-400"
+          >
+            ← Voltar para Shiny Tiers
           </Link>
 
-          <div className="eyebrow">SHINY TIER</div>
+          <div className="mt-8">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-violet-400">
+              Shiny • Tier
+            </p>
 
-          <div className="tier-title-row">
-            <div>
-              <h1>
-                Tier {tier}
+            <div className="mt-2 flex flex-wrap items-end gap-4">
+              <h1 className="text-4xl font-black tracking-tight md:text-5xl">
+                TIER {tier}
               </h1>
 
-              <p>
-                {data.points} pontos por shiny.
-              </p>
+              <span className="mb-1 rounded-full bg-violet-500/10 px-4 py-1.5 text-sm font-bold text-violet-400">
+                {data.points} pts
+              </span>
             </div>
 
-            <div className={`big-tier-badge tier-color-${tier}`}>
-              <strong>{data.points}</strong>
-              <span>POINTS</span>
-            </div>
+            <p className="mt-3 text-gray-400">
+              Pokémon disponíveis neste tier.
+            </p>
           </div>
 
-          <div className="tier-summary">
-            <div>
-              <strong>TIER {tier}</strong>
-              <span>{data.points} pontos</span>
+          {/* STATS */}
+          <div className="mt-7 flex flex-wrap gap-3">
+            <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] px-5 py-3">
+              <span className="text-2xl font-black">
+                {pokemon.length}
+              </span>
+
+              <span className="ml-2 text-xs font-bold uppercase tracking-wider text-gray-600">
+                Pokémon
+              </span>
             </div>
 
-            <div>
-              <strong>{data.pokemon.length}</strong>
-              <span>Pokémon</span>
+            <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] px-5 py-3">
+              <span className="text-2xl font-black text-violet-400">
+                {data.points}
+              </span>
+
+              <span className="ml-2 text-xs font-bold uppercase tracking-wider text-gray-600">
+                Pontos
+              </span>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="container pokemon-section">
-        <div className="section-heading">
-          <div>
-            <span className="eyebrow">
-              POKÉMON
-            </span>
-
-            <h2>
-              Shinies do Tier {tier}
-            </h2>
-          </div>
-
-          <span className="section-count">
-            {data.pokemon.length} entradas
-          </span>
-        </div>
-
-        <div className="pokemon-grid">
-          {sprites.map(({ name, sprite }) => (
-            <Link
-              key={name}
-              href={`/pokemon/${encodeURIComponent(
-                name.toLowerCase()
-              )}`}
-              className="pokemon-card"
-            >
-              <div className="pokemon-image">
-                {sprite ? (
-                  <img
-                    src={sprite}
-                    alt={`Shiny ${name}`}
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="sprite-placeholder">
-                    ?
-                  </div>
-                )}
-              </div>
-
-              <div className="pokemon-info">
-                <span className="pokemon-number">
-                  #{String(dex[name]).padStart(3, "0")}
-                </span>
-
-                <strong>{name}</strong>
-
-                <span className="pokemon-points">
-                  {data.points} pts
-                </span>
-              </div>
-
-              <div className="pokemon-arrow">
-                →
-              </div>
-            </Link>
-          ))}
-        </div>
+      {/* POKÉMON */}
+      <section className="mx-auto max-w-7xl px-6 py-10">
+        <TierPokemonGrid
+          pokemon={pokemon}
+          tier={tier}
+          points={data.points}
+        />
       </section>
-    </div>
+    </main>
   );
 }

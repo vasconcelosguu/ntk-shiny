@@ -1,182 +1,119 @@
-import { createClient } from "../../../lib/supabase/server";
 import Link from "next/link";
-import { notFound } from "next/navigation";
-import ShinyCard from "../../components/ShinyCard";
+import { teamCategories } from "../../../lib/team";
 
-type Props = {
-  params: Promise<{
-    username: string;
-  }>;
-};
-
-export default async function PlayerPage({
-  params,
-}: Props) {
-  const { username } = await params;
-
-  const supabase = await createClient();
-
-  const {
-    data: profile,
-    error: profileError,
-  } = await supabase
-    .from("profiles")
-    .select(
-      "id, username, display_name, created_at"
-    )
-    .eq("username", username)
-    .maybeSingle();
-
-  if (profileError) {
-    console.error(profileError);
-  }
-
-  if (!profile) {
-    notFound();
-  }
-
-  const {
-    data: {
-      user,
-    },
-  } = await supabase.auth.getUser();
-
-  const isOwner =
-    user?.id === profile.id;
-
-  const {
-    data: shinies,
-    error: shiniesError,
-  } = await supabase
-    .from("shinies")
-    .select("*")
-    .eq("user_id", profile.id)
-    .order("caught_at", {
-      ascending: false,
-    });
-
-  if (shiniesError) {
-    console.error(shiniesError);
-  }
-
-  const shinyList = shinies ?? [];
-
+export default function Home() {
   return (
-    <main className="page">
-      <section className="player-hero">
-        <div className="container">
-          <Link
-            href="/"
-            className="back-link"
-          >
-            ← Voltar para Home
-          </Link>
-
-          <div className="player-profile">
-            <div className="player-avatar">
-              {(
-                profile.display_name ||
-                profile.username
-              )
-                .charAt(0)
-                .toUpperCase()}
+    <div className="min-h-screen">
+      {/* HERO */}
+      <section className="border-b border-white/[0.06] bg-gradient-to-b from-violet-950/20 to-transparent">
+        <div className="mx-auto max-w-7xl px-6 pb-16 pt-20">
+          <div className="max-w-3xl">
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-violet-500/20 bg-violet-500/10 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-violet-400">
+              PokeMMO • Team Portal
             </div>
 
-            <div className="player-info">
-              <span className="eyebrow">
-                PLAYER
-              </span>
+            <h1 className="text-5xl font-black tracking-tight text-white md:text-6xl">
+              neverTakeBan
+            </h1>
 
-              <h1>
-                {profile.display_name ||
-                  profile.username}
-              </h1>
-
-              <p>
-                @{profile.username}
-              </p>
-            </div>
-
-            <div className="player-stat">
-              <strong>
-                {shinyList.length}
-              </strong>
-
-              <span>
-                SHINIES
-              </span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="container player-content">
-        <div className="section-heading">
-          <div>
-            <span className="eyebrow">
-              COLEÇÃO
-            </span>
-
-            <h2>
-              Shinies
-            </h2>
-          </div>
-
-          {isOwner && (
-            <Link
-              href={`/players/${profile.username}/add-shiny`}
-              className="primary-button"
-            >
-              <span>+</span>
-              Adicionar Shiny
-            </Link>
-          )}
-        </div>
-
-        {shinyList.length === 0 ? (
-          <div className="empty-state">
-            <div className="empty-icon">
-              ✦
-            </div>
-
-            <h3>
-              Nenhum shiny cadastrado
-            </h3>
-
-            <p>
-              {isOwner
-                ? "Comece sua coleção adicionando seu primeiro shiny."
-                : "Este jogador ainda não cadastrou nenhum shiny."}
+            <p className="mt-5 max-w-2xl text-lg leading-8 text-gray-400">
+              Central de estratégias, guias, builds e informações
+              utilizadas pelo time no PokeMMO.
             </p>
-
-            {isOwner && (
-              <Link
-                href={`/players/${profile.username}/add-shiny`}
-                className="primary-button"
-              >
-                + Adicionar primeiro shiny
-              </Link>
-            )}
           </div>
-        ) : (
-          <div className="shiny-grid">
-            {shinyList.map((shiny) => (
-              <ShinyCard
-                key={shiny.id}
-                id={shiny.id}
-                username={profile.username}
-                pokemon={shiny.pokemon}
-                nickname={shiny.nickname}
-                encounters={shiny.encounters}
-                method={shiny.method}
-                region={shiny.region}
-                location={shiny.location}
-                canManage={isOwner}
-              />
-            ))}
-          </div>
-        )}
+        </div>
       </section>
-    </main>
+
+      {/* CATEGORIAS */}
+      <section className="mx-auto max-w-7xl px-6 py-12">
+        <div className="space-y-12">
+          {teamCategories.map((category) => (
+            <section key={category.slug}>
+              {/* CATEGORY HEADER */}
+              <div className="mb-5 flex items-end justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">{category.icon}</span>
+
+                    <h2 className="text-2xl font-black tracking-tight text-white">
+                      {category.name}
+                    </h2>
+                  </div>
+
+                  <p className="mt-1 text-sm text-gray-500">
+                    {category.description}
+                  </p>
+                </div>
+
+                {category.channels.length > 0 && (
+                  <span className="hidden rounded-full border border-white/[0.07] bg-white/[0.025] px-3 py-1 text-xs font-semibold text-gray-500 sm:block">
+                    {category.channels.length}{" "}
+                    {category.channels.length === 1
+                      ? "seção"
+                      : "seções"}
+                  </span>
+                )}
+              </div>
+
+              {/* CHANNELS */}
+              {category.channels.length > 0 ? (
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {category.channels.map((channel) => (
+                    <Link
+                      key={channel.slug}
+                      href={`/${category.slug}/${channel.slug}`}
+                      className="group rounded-2xl border border-white/[0.07] bg-[#0d111c] p-5 transition duration-200 hover:-translate-y-1 hover:border-violet-500/30 hover:bg-[#111625] hover:shadow-2xl hover:shadow-violet-950/20"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/[0.06] bg-white/[0.035] text-xl">
+                          {channel.icon}
+                        </div>
+
+                        <span className="text-sm text-gray-600 transition group-hover:translate-x-1 group-hover:text-violet-400">
+                          →
+                        </span>
+                      </div>
+
+                      <h3 className="mt-5 text-lg font-bold text-white">
+                        {channel.name}
+                      </h3>
+
+                      <p className="mt-2 min-h-10 text-sm leading-5 text-gray-500">
+                        {channel.description}
+                      </p>
+
+                      <div className="mt-5 border-t border-white/[0.06] pt-4 text-xs font-bold uppercase tracking-wider text-gray-600 transition group-hover:text-violet-400">
+                        Ver estratégias
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <Link
+                  href={`/${category.slug}`}
+                  className="group block rounded-2xl border border-dashed border-white/[0.08] bg-white/[0.015] p-6 transition hover:border-violet-500/30 hover:bg-violet-500/[0.03]"
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-bold text-white">
+                        Área em construção
+                      </h3>
+
+                      <p className="mt-1 text-sm text-gray-500">
+                        Novos conteúdos serão adicionados aqui.
+                      </p>
+                    </div>
+
+                    <span className="text-gray-600 transition group-hover:translate-x-1 group-hover:text-violet-400">
+                      →
+                    </span>
+                  </div>
+                </Link>
+              )}
+            </section>
+          ))}
+        </div>
+      </section>
+    </div>
   );
 }

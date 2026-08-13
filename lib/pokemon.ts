@@ -1,9 +1,9 @@
-export async function getPokemonShinySprite(name: string) {
+export async function getPokemonShinySprite(
+  name: string
+): Promise<string | null> {
   try {
     const response = await fetch(
-      `https://pokeapi.co/api/v2/pokemon/${encodeURIComponent(
-        name.toLowerCase()
-      )}`,
+      `https://pokeapi.co/api/v2/pokemon/${encodeURIComponent(name)}`,
       {
         next: {
           revalidate: 86400,
@@ -17,8 +17,21 @@ export async function getPokemonShinySprite(name: string) {
 
     const data = await response.json();
 
-    return data.sprites?.front_shiny ?? null;
-  } catch {
+    // Sprite animada shiny da Gen V
+    return (
+      data.sprites?.versions?.["generation-v"]?.[
+        "black-white"
+      ]?.animated?.front_shiny ??
+      // fallback para sprite shiny normal
+      data.sprites?.front_shiny ??
+      null
+    );
+  } catch (error) {
+    console.error(
+      `Erro ao buscar sprite de ${name}:`,
+      error
+    );
+
     return null;
   }
 }
