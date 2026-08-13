@@ -114,21 +114,20 @@ export async function getPokemonShinySprite(
 ): Promise<string | null> {
   const normalized = normalizeName(name);
 
+  const url =
+    `https://pokeapi.co/api/v2/pokemon/` +
+    `${encodeURIComponent(normalized)}`;
+
   try {
-    const response = await fetch(
-      `https://pokeapi.co/api/v2/pokemon/${encodeURIComponent(
-        normalized
-      )}`,
-      {
-        next: {
-          revalidate: 86400,
-        },
-      }
-    );
+    const response = await fetch(url, {
+      next: {
+        revalidate: 86400,
+      },
+    });
 
     if (!response.ok) {
       console.warn(
-        `Pokémon não encontrado na PokeAPI: ${name} -> ${normalized}`
+        `Pokémon não encontrado na PokeAPI: ${name} -> ${normalized} (${response.status})`
       );
 
       return null;
@@ -138,39 +137,62 @@ export async function getPokemonShinySprite(
       (await response.json()) as PokemonApiResponse;
 
     /*
-     * Primeiro: tenta a sprite do Showdown.
+     * PRIMEIRA OPÇÃO
      *
-     * Essa normalmente é animada.
-     */
-    const showdown =
-      data.sprites.other?.showdown?.front_shiny;
-
-    if (showdown) {
-      return showdown;
-    }
-
-    /*
-     * Segundo: sprite shiny normal.
+     * Sprite shiny normal.
+     *
+     * Essa é a opção mais simples e
+     * consistente para o site.
      */
     if (data.sprites.front_shiny) {
+      console.log(
+        `✓ Sprite encontrada: ${name} -> ${data.sprites.front_shiny}`
+      );
+
       return data.sprites.front_shiny;
     }
 
     /*
-     * Terceiro: artwork oficial.
+     * SEGUNDA OPÇÃO
+     *
+     * Artwork oficial shiny.
      */
     const artwork =
       data.sprites.other?.["official-artwork"]
         ?.front_shiny;
 
     if (artwork) {
+      console.log(
+        `✓ Artwork encontrada: ${name} -> ${artwork}`
+      );
+
       return artwork;
     }
+
+    /*
+     * TERCEIRA OPÇÃO
+     *
+     * Showdown shiny.
+     */
+    const showdown =
+      data.sprites.other?.showdown?.front_shiny;
+
+    if (showdown) {
+      console.log(
+        `✓ Showdown encontrada: ${name} -> ${showdown}`
+      );
+
+      return showdown;
+    }
+
+    console.warn(
+      `⚠ Nenhuma sprite shiny encontrada para: ${name}`
+    );
 
     return null;
   } catch (error) {
     console.error(
-      `Erro ao buscar sprite de ${name}:`,
+      `❌ Erro ao buscar sprite de ${name}:`,
       error
     );
 

@@ -178,7 +178,6 @@ export default async function ShinyPlayerPage({
                       alt={`Shiny ${shiny.displayName}`}
                       width={160}
                       height={160}
-                      loading="lazy"
                       className="relative h-32 w-32 object-contain transition-transform duration-300 group-hover:scale-110"
                     />
                   ) : (
