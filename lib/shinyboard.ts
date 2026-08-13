@@ -91,13 +91,29 @@ export async function getShinyBoardProfile(
 
     const html = await response.text();
 
-    /*
-     * Primeiro encontramos os Shinies
-     * no HTML do ShinyBoard.
-     */
-    const parsedShinies =
-      parseShinies(html);
+console.log(
+  `[SHINYBOARD] ${username} status:`,
+  response.status
+);
 
+console.log(
+  `[SHINYBOARD] ${username} HTML length:`,
+  html.length
+);
+
+const parsedShinies = parseShinies(html);
+
+console.log(
+  `[SHINYBOARD] ${username} parsed shinies:`,
+  parsedShinies.length
+);
+
+console.log(
+  `[SHINYBOARD] ${username} Pokémon:`,
+  parsedShinies.map(
+    (x) => x.displayName
+  )
+);
     /*
      * Depois buscamos as sprites.
      *
