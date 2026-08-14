@@ -1,159 +1,314 @@
 import Link from "next/link";
-import { shinyPlayers } from "../../../../lib/players";
-import { getShinyBoardProfile } from "../../../../lib/shinyboard";
+
+import {
+  getShinyPlayers,
+} from "@/lib/shiny-db";
+
+import {
+  getPokemonShinySprite,
+} from "@/lib/pokemon";
 
 export const revalidate = 3600;
 
 export default async function ShinyPlayersPage() {
-  const players = await Promise.all(
-    shinyPlayers.map(async (player) => {
-      const profile = await getShinyBoardProfile(
-        player.shinyboardUsername
-      );
+  const players =
+    await getShinyPlayers();
 
-      return {
-        ...player,
-        profile,
-      };
-    })
-  );
+  /*
+   * Busca as sprites dos previews
+   * de todos os jogadores em paralelo.
+   */
+  const playersWithSprites =
+    await Promise.all(
+      players.map(async (player) => {
+        const previews =
+          await Promise.all(
+            player.previews.map(
+              async (pokemon) => ({
+                ...pokemon,
+
+                sprite:
+                  await getPokemonShinySprite(
+                    pokemon.pokemon
+                  ),
+              })
+            )
+          );
+
+        return {
+          ...player,
+          previews,
+        };
+      })
+    );
 
   return (
-    <main className="min-h-screen bg-[#080b14] text-white">
+    <main className="min-h-screen">
+
+      {/* HERO */}
+
       <section className="border-b border-white/[0.06] bg-gradient-to-b from-violet-950/20 to-transparent">
+
         <div className="mx-auto max-w-7xl px-6 pb-14 pt-16">
-          <Link
-            href="/hunt/shiny"
-            className="text-sm font-semibold text-gray-500 transition hover:text-violet-400"
-          >
-            ← Voltar para Shiny
-          </Link>
 
-          <div className="mt-8">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-violet-400">
-              Shiny • Players
-            </p>
+          <div className="max-w-3xl">
 
-            <h1 className="mt-3 text-4xl font-black tracking-tight md:text-5xl">
-              Coleções dos Players
+            <div className="mb-4 inline-flex rounded-full border border-violet-500/20 bg-violet-500/10 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-violet-400">
+              SHINY HUNT
+            </div>
+
+            <h1 className="text-4xl font-black tracking-tight text-white md:text-5xl">
+              Players
             </h1>
 
-            <p className="mt-4 max-w-2xl leading-7 text-gray-400">
-              Shinies registrados pelos membros do
-              neverTakeBan.
+            <p className="mt-4 text-lg leading-8 text-gray-400">
+              Coleção de Shinies dos membros
+              do neverTakeBan.
             </p>
+
           </div>
+
         </div>
+
       </section>
+
+
+      {/* PLAYERS */}
 
       <section className="mx-auto max-w-7xl px-6 py-12">
-        {players.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-white/[0.08] bg-white/[0.015] p-10 text-center">
-            <p className="font-bold text-white">
-              Nenhum player cadastrado.
-            </p>
+
+        {playersWithSprites.length === 0 ? (
+
+          <div className="rounded-2xl border border-white/[0.07] bg-[#0d111c] p-10 text-center">
+
+            <h2 className="text-xl font-bold text-white">
+              Nenhum player encontrado
+            </h2>
 
             <p className="mt-2 text-sm text-gray-500">
-              Adicione jogadores em lib/players.ts.
+              Execute o sincronizador do
+              ShinyBoard para importar os
+              dados.
             </p>
+
           </div>
+
         ) : (
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
-            {players.map((player) => {
-              const profile = player.profile;
 
-              return (
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+
+            {playersWithSprites.map(
+              (player) => (
+
                 <Link
-                  key={player.shinyboardUsername}
+                  key={player.id}
                   href={`/hunt/shiny/players/${encodeURIComponent(
-                    player.shinyboardUsername
+                    player.username
                   )}`}
-                  className="group overflow-hidden rounded-2xl border border-white/[0.07] bg-[#0d111c] transition duration-200 hover:-translate-y-1 hover:border-violet-500/30 hover:bg-[#111625] hover:shadow-2xl hover:shadow-violet-950/20"
+                  className="
+                    group
+                    relative
+                    overflow-hidden
+                    rounded-2xl
+                    border
+                    border-white/[0.07]
+                    bg-[#0d111c]
+                    p-6
+                    transition
+                    duration-300
+                    hover:-translate-y-1
+                    hover:border-violet-500/30
+                    hover:bg-[#111625]
+                    hover:shadow-2xl
+                    hover:shadow-violet-950/20
+                  "
                 >
-                  <div className="border-b border-white/[0.06] bg-gradient-to-r from-violet-500/[0.08] to-transparent p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-widest text-violet-400">
-                          Shiny Hunter
-                        </p>
 
-                        <h2 className="mt-2 text-2xl font-black text-white">
-                          {player.username}
-                        </h2>
-                      </div>
+                  {/* brilho de fundo */}
 
-                      <span className="text-xl text-gray-700 transition group-hover:translate-x-1 group-hover:text-violet-400">
-                        →
-                      </span>
+                  <div
+                    className="
+                      pointer-events-none
+                      absolute
+                      -right-16
+                      -top-16
+                      h-40
+                      w-40
+                      rounded-full
+                      bg-violet-600/10
+                      blur-3xl
+                      transition
+                      duration-500
+                      group-hover:bg-violet-500/20
+                    "
+                  />
+
+
+                  {/* HEADER */}
+
+                  <div className="relative flex items-start justify-between">
+
+                    <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-violet-500/20 bg-violet-500/10 text-xl">
+                      ✦
                     </div>
+
+                    <span className="text-sm text-gray-600 transition duration-200 group-hover:translate-x-1 group-hover:text-violet-400">
+                      →
+                    </span>
+
                   </div>
 
-                  <div className="p-6">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-4">
-                        <span className="block text-2xl font-black">
-                          {profile.totalShinies}
-                        </span>
 
-                        <span className="mt-1 block text-xs font-bold uppercase tracking-wider text-gray-600">
-                          Shinies
-                        </span>
-                      </div>
+                  {/* SPRITES */}
 
-                      <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-4">
-                        <span className="block text-2xl font-black">
-                          {profile.totalEncounters.toLocaleString(
-                            "pt-BR"
-                          )}
-                        </span>
+                  <div className="relative mt-4 flex h-36 items-end justify-center">
 
-                        <span className="mt-1 block text-xs font-bold uppercase tracking-wider text-gray-600">
-                          Encounters
-                        </span>
-                      </div>
-                    </div>
+                    {player.previews.length > 0 ? (
 
-                    {profile.shinies.length > 0 && (
-                      <div className="mt-6">
-                        <div className="flex -space-x-3 overflow-hidden">
-                          {profile.shinies
-                            .slice(0, 6)
-                            .map((shiny, index) =>
-                              shiny.sprite ? (
-                                <div
-                                  key={`${shiny.displayName}-${index}`}
-                                  className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-[#0d111c] bg-[#151b2a]"
-                                >
+                      <div className="flex h-full items-end justify-center">
+
+                        {player.previews.map(
+                          (pokemon, index) => {
+
+                            /*
+                             * Quanto mais Pokémon,
+                             * menor cada sprite.
+                             */
+                            const size =
+                              player.previews.length >= 5
+                                ? "h-24 w-24"
+                                : player.previews.length >= 4
+                                ? "h-28 w-28"
+                                : "h-32 w-32";
+
+                            return (
+                              <div
+                                key={pokemon.id}
+                                className={`
+                                  relative
+                                  -mx-2
+                                  ${size}
+                                  transition
+                                  duration-300
+                                  group-hover:-translate-y-2
+                                `}
+                                style={{
+                                  zIndex:
+                                    player.previews.length -
+                                    index,
+                                  animationDelay: `${index * 80}ms`,
+                                }}
+                              >
+
+                                {pokemon.sprite ? (
+
                                   <img
-                                    src={shiny.sprite}
-                                    alt={shiny.pokemon}
-                                    width={48}
-                                    height={48}
-                                    className="h-12 w-12 object-contain"
+                                    src={
+                                      pokemon.sprite
+                                    }
+                                    alt={
+                                      `Shiny ${pokemon.display_name}`
+                                    }
+                                    loading="lazy"
+                                    className="
+                                      h-full
+                                      w-full
+                                      object-contain
+                                      drop-shadow-[0_8px_10px_rgba(0,0,0,0.45)]
+                                      transition
+                                      duration-300
+                                      group-hover:scale-110
+                                    "
                                   />
-                                </div>
-                              ) : null
-                            )}
-                        </div>
 
-                        {profile.shinies.length > 6 && (
-                          <p className="mt-4 text-xs text-gray-600">
-                            + {profile.shinies.length - 6} outros
-                          </p>
+                                ) : (
+
+                                  <div className="flex h-full w-full items-center justify-center text-gray-700">
+                                    ?
+                                  </div>
+
+                                )}
+
+                              </div>
+                            );
+                          }
                         )}
+
                       </div>
+
+                    ) : (
+
+                      <div className="flex h-28 w-28 items-center justify-center rounded-full border border-white/[0.06] bg-white/[0.02] text-4xl text-gray-700">
+                        ✦
+                      </div>
+
                     )}
 
-                    <div className="mt-6 border-t border-white/[0.06] pt-4 text-xs font-bold uppercase tracking-widest text-gray-600 transition group-hover:text-violet-400">
-                      Ver coleção completa
-                    </div>
                   </div>
+
+
+                  {/* PLAYER */}
+
+                  <div className="relative mt-3">
+
+                    <h2 className="text-xl font-black text-white">
+                      {player.username}
+                    </h2>
+
+                  </div>
+
+
+                  {/* STATS */}
+
+                  <div className="relative mt-5 grid grid-cols-2 gap-3">
+
+                    <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+
+                      <span className="block text-xs uppercase tracking-wider text-gray-600">
+                        Shinies
+                      </span>
+
+                      <strong className="mt-1 block text-lg text-violet-400">
+                        {player.total_shinies}
+                      </strong>
+
+                    </div>
+
+
+                    <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+
+                      <span className="block text-xs uppercase tracking-wider text-gray-600">
+                        Encontros
+                      </span>
+
+                      <strong className="mt-1 block text-lg text-white">
+                        {player.total_encounters.toLocaleString(
+                          "pt-BR"
+                        )}
+                      </strong>
+
+                    </div>
+
+                  </div>
+
+
+                  {/* FOOTER */}
+
+                  <div className="relative mt-5 border-t border-white/[0.06] pt-4 text-xs font-bold uppercase tracking-wider text-gray-600 transition group-hover:text-violet-400">
+                    Ver shinies →
+                  </div>
+
                 </Link>
-              );
-            })}
+
+              )
+            )}
+
           </div>
+
         )}
+
       </section>
+
     </main>
   );
 }

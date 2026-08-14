@@ -1,14 +1,14 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
 
 import {
-  getShinyPlayer,
-  shinyPlayers,
-} from "../../../../../lib/players";
+  getShinyPlayerWithEntries,
+} from "@/lib/shiny-db";
 
-import { getShinyBoardProfile } from "../../../../../lib/shinyboard";
+import {
+  getPokemonShinySprite,
+} from "@/lib/pokemon";
 
-type Props = {
+type PageProps = {
   params: Promise<{
     username: string;
   }>;
@@ -16,171 +16,317 @@ type Props = {
 
 export const revalidate = 3600;
 
-export function generateStaticParams() {
-  return shinyPlayers.map((player) => ({
-    username: player.shinyboardUsername,
-  }));
-}
-
 export default async function ShinyPlayerPage({
   params,
-}: Props) {
+}: PageProps) {
   const { username } = await params;
 
-  const decodedUsername = decodeURIComponent(username);
+  const data =
+    await getShinyPlayerWithEntries(
+      decodeURIComponent(username)
+    );
 
-  const player = getShinyPlayer(decodedUsername);
+  if (!data) {
+    return (
+      <main className="min-h-screen px-6 py-20">
 
-  if (!player) {
-    notFound();
-  }
+        <div className="mx-auto max-w-3xl rounded-2xl border border-white/[0.07] bg-[#0d111c] p-10 text-center">
 
-  const profile = await getShinyBoardProfile(
-    player.shinyboardUsername
-  );
+          <h1 className="text-2xl font-black text-white">
+            Player não encontrado
+          </h1>
 
-  return (
-    <main className="min-h-screen bg-[#080b14] text-white">
-      {/* HEADER */}
-      <section className="border-b border-white/[0.06] bg-gradient-to-b from-violet-950/20 to-transparent">
-        <div className="mx-auto max-w-7xl px-6 pb-14 pt-16">
+          <p className="mt-3 text-gray-500">
+            Não encontramos esse player no
+            banco de dados.
+          </p>
+
           <Link
             href="/hunt/shiny/players"
-            className="inline-flex items-center text-sm font-semibold text-gray-500 transition hover:text-violet-400"
+            className="mt-6 inline-flex rounded-xl border border-violet-500/20 bg-violet-500/10 px-5 py-3 text-sm font-bold text-violet-400 transition hover:bg-violet-500/20"
           >
-            ← Voltar para Players
+            Voltar para players
           </Link>
 
-          <div className="mt-8 flex flex-col justify-between gap-8 md:flex-row md:items-end">
+        </div>
+
+      </main>
+    );
+  }
+
+  const {
+    player,
+    entries,
+  } = data;
+
+  /*
+   * Busca todas as sprites em paralelo.
+   *
+   * Isso evita fazer uma requisição por vez.
+   */
+  const entriesWithSprites =
+    await Promise.all(
+      entries.map(async (entry) => {
+        const sprite =
+          await getPokemonShinySprite(
+            entry.pokemon
+          );
+
+        return {
+          ...entry,
+          sprite,
+        };
+      })
+    );
+
+  return (
+    <main className="min-h-screen">
+
+      {/* HERO */}
+
+      <section className="border-b border-white/[0.06] bg-gradient-to-b from-violet-950/20 to-transparent">
+
+        <div className="mx-auto max-w-7xl px-6 pb-14 pt-16">
+
+          <Link
+            href="/hunt/shiny/players"
+            className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-gray-500 transition hover:text-violet-400"
+          >
+            ← Players
+          </Link>
+
+          <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+
             <div>
-              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-violet-500/20 bg-violet-500/10 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-violet-400">
-                ✨ Shiny Collection
+
+              <div className="mb-4 inline-flex rounded-full border border-violet-500/20 bg-violet-500/10 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-violet-400">
+                SHINY HUNT
               </div>
 
               <h1 className="text-4xl font-black tracking-tight text-white md:text-5xl">
                 {player.username}
               </h1>
 
-              <p className="mt-3 max-w-xl text-gray-500">
-                Coleção de Shinies sincronizada com o
+              <p className="mt-3 text-gray-500">
+                Shinies registrados no
                 ShinyBoard.
               </p>
+
             </div>
 
-            <a
-              href={`https://www.shinyboard.net/users/${encodeURIComponent(
-                player.shinyboardUsername
-              )}?tab=shinies`}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex w-fit items-center rounded-xl border border-white/[0.08] bg-white/[0.025] px-4 py-3 text-sm font-bold text-gray-400 transition hover:border-violet-500/30 hover:bg-violet-500/[0.04] hover:text-violet-400"
-            >
-              Abrir ShinyBoard
-              <span className="ml-2">↗</span>
-            </a>
+            <div className="grid grid-cols-2 gap-3">
+
+              <div className="rounded-2xl border border-white/[0.07] bg-[#0d111c] px-5 py-4">
+
+                <span className="block text-xs font-bold uppercase tracking-wider text-gray-600">
+                  Shinies
+                </span>
+
+                <strong className="mt-1 block text-2xl font-black text-violet-400">
+                  {player.total_shinies}
+                </strong>
+
+              </div>
+
+              <div className="rounded-2xl border border-white/[0.07] bg-[#0d111c] px-5 py-4">
+
+                <span className="block text-xs font-bold uppercase tracking-wider text-gray-600">
+                  Encontros
+                </span>
+
+                <strong className="mt-1 block text-2xl font-black text-white">
+                  {player.total_encounters.toLocaleString(
+                    "pt-BR"
+                  )}
+                </strong>
+
+              </div>
+
+            </div>
+
           </div>
 
-          {/* STATS */}
-          <div className="mt-8 grid max-w-xl grid-cols-2 gap-3">
-            <div className="rounded-2xl border border-white/[0.07] bg-[#0d111c] p-5">
-              <span className="block text-3xl font-black text-white">
-                {profile.totalShinies}
-              </span>
-
-              <span className="mt-1 block text-xs font-bold uppercase tracking-widest text-gray-600">
-                Shinies
-              </span>
-            </div>
-
-            <div className="rounded-2xl border border-white/[0.07] bg-[#0d111c] p-5">
-              <span className="block text-3xl font-black text-white">
-                {profile.totalEncounters.toLocaleString(
-                  "pt-BR"
-                )}
-              </span>
-
-              <span className="mt-1 block text-xs font-bold uppercase tracking-widest text-gray-600">
-                Encounters
-              </span>
-            </div>
-          </div>
         </div>
+
       </section>
 
-      {/* COLLECTION */}
+      {/* SHINIES */}
+
       <section className="mx-auto max-w-7xl px-6 py-12">
-        <div className="mb-8">
-          <h2 className="text-2xl font-black text-white">
-            Coleção
-          </h2>
 
-          <p className="mt-1 text-sm text-gray-500">
-            Shinies registrados para este player.
-          </p>
-        </div>
+        {entriesWithSprites.length === 0 ? (
 
-        {profile.shinies.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-white/[0.08] bg-white/[0.015] p-12 text-center">
-            <div className="text-5xl">✨</div>
+          <div className="rounded-2xl border border-white/[0.07] bg-[#0d111c] p-10 text-center">
 
-            <h2 className="mt-5 text-lg font-bold text-white">
-              Nenhum Shiny encontrado
+            <h2 className="text-xl font-bold text-white">
+              Nenhum shiny registrado
             </h2>
 
-            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-gray-500">
-              Não foi possível encontrar Shinies registrados
-              para este player no momento.
+            <p className="mt-2 text-sm text-gray-500">
+              O ShinyBoard não possui shinies
+              registrados para este player.
             </p>
+
           </div>
+
         ) : (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-            {profile.shinies.map((shiny, index) => (
-              <div
-                key={`${shiny.displayName}-${index}`}
-                className="group overflow-hidden rounded-2xl border border-white/[0.07] bg-[#0d111c] transition duration-200 hover:-translate-y-1 hover:border-violet-500/30 hover:bg-[#111625] hover:shadow-xl hover:shadow-violet-950/10"
-              >
-                {/* SPRITE */}
-                <div className="flex aspect-square items-center justify-center bg-[#080b14]">
-                  {shiny.sprite ? (
-                    <img
-                      src={shiny.sprite}
-                      alt={`Shiny ${shiny.pokemon}`}
-                      width={140}
-                      height={140}
-                      loading="lazy"
-                      className="h-32 w-32 object-contain transition duration-200 group-hover:scale-110"
-                    />
-                  ) : (
-                    <span className="text-4xl text-gray-700">
-                      ?
+
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+
+            {entriesWithSprites.map(
+              (entry) => (
+
+                <article
+                  key={entry.id}
+                  className="
+                    group
+                    overflow-hidden
+                    rounded-2xl
+                    border border-white/[0.07]
+                    bg-[#0d111c]
+                    transition
+                    duration-200
+                    hover:-translate-y-1
+                    hover:border-violet-500/30
+                    hover:bg-[#111625]
+                    hover:shadow-2xl
+                    hover:shadow-violet-950/20
+                  "
+                >
+
+                  {/* TOP */}
+
+                  <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-3">
+
+                    <span className="rounded-full border border-violet-500/20 bg-violet-500/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-violet-400">
+                      ✦ SHINY
                     </span>
-                  )}
-                </div>
 
-                {/* INFO */}
-                <div className="p-4">
-                  <h3 className="truncate font-bold text-white">
-                    {shiny.displayName}
-                  </h3>
-
-                  <p className="mt-1 truncate text-xs capitalize text-gray-600">
-                    {shiny.pokemon}
-                  </p>
-
-                  <div className="mt-4 border-t border-white/[0.06] pt-3">
-                    <span className="text-xs font-semibold text-gray-500">
-                      {shiny.encounters.toLocaleString(
+                    <span className="text-xs font-semibold text-gray-600">
+                      {entry.encounters.toLocaleString(
                         "pt-BR"
                       )}{" "}
-                      encounters
+                      enc.
                     </span>
+
                   </div>
-                </div>
-              </div>
-            ))}
+
+                  {/* SPRITE */}
+
+                  <div className="flex h-52 items-center justify-center overflow-hidden">
+
+                    {entry.sprite ? (
+
+                      <img
+                        src={entry.sprite}
+                        alt={`Shiny ${entry.display_name}`}
+                        width={160}
+                        height={160}
+                        loading="lazy"
+                        className="
+                          h-40
+                          w-40
+                          object-contain
+                          transition
+                          duration-300
+                          group-hover:scale-110
+                        "
+                      />
+
+                    ) : (
+
+                      <div className="flex h-32 w-32 items-center justify-center rounded-full border border-white/[0.06] bg-white/[0.02] text-3xl font-black text-gray-700">
+                        ?
+                      </div>
+
+                    )}
+
+                  </div>
+
+                  {/* INFO */}
+
+                  <div className="border-t border-white/[0.06] p-5">
+
+                    <h2 className="text-lg font-black text-white">
+                      {entry.display_name}
+                    </h2>
+
+                    {entry.nickname && (
+                      <p className="mt-1 text-sm italic text-gray-500">
+                        "{entry.nickname}"
+                      </p>
+                    )}
+
+                    <div className="mt-4 space-y-2">
+
+                      {entry.method && (
+                        <div className="flex justify-between gap-3 text-xs">
+
+                          <span className="text-gray-600">
+                            Método
+                          </span>
+
+                          <strong className="text-gray-400">
+                            {entry.method}
+                          </strong>
+
+                        </div>
+                      )}
+
+                      {entry.region && (
+                        <div className="flex justify-between gap-3 text-xs">
+
+                          <span className="text-gray-600">
+                            Região
+                          </span>
+
+                          <strong className="text-gray-400">
+                            {entry.region}
+                          </strong>
+
+                        </div>
+                      )}
+
+                      {entry.location && (
+                        <div className="flex justify-between gap-3 text-xs">
+
+                          <span className="text-gray-600">
+                            Local
+                          </span>
+
+                          <strong className="max-w-[60%] text-right text-gray-400">
+                            {entry.location}
+                          </strong>
+
+                        </div>
+                      )}
+
+                    </div>
+
+                    {entry.source_url && (
+                      <a
+                        href={entry.source_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-5 block border-t border-white/[0.06] pt-4 text-xs font-bold uppercase tracking-wider text-gray-600 transition hover:text-violet-400"
+                      >
+                        Ver no ShinyBoard →
+                      </a>
+                    )}
+
+                  </div>
+
+                </article>
+
+              )
+            )}
+
           </div>
+
         )}
+
       </section>
+
     </main>
   );
 }

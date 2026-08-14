@@ -6,6 +6,8 @@ gitignore
 /.next/
 /out/
 
+scripts/.env
+
 # Production
 /build
 

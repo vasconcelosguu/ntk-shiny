@@ -1,92 +1,102 @@
 import Link from "next/link";
+import {
+  getShinyPlayers,
+} from "@/lib/shiny-db";
 
-export default function ShinyPage() {
+export const revalidate = 3600;
+
+export default async function ShinyPlayersPage() {
+  const players =
+    await getShinyPlayers();
+
   return (
-    <main className="min-h-screen bg-[#080b14] text-white">
+    <main className="min-h-screen">
       <section className="border-b border-white/[0.06] bg-gradient-to-b from-violet-950/20 to-transparent">
         <div className="mx-auto max-w-7xl px-6 pb-14 pt-16">
-          <Link
-            href="/hunt"
-            className="text-sm font-semibold text-gray-500 transition hover:text-violet-400"
-          >
-            ← Voltar para Hunt
-          </Link>
+          <div className="max-w-3xl">
+            <div className="mb-4 inline-flex rounded-full border border-violet-500/20 bg-violet-500/10 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-violet-400">
+              SHINY HUNT
+            </div>
 
-          <div className="mt-8 max-w-3xl">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-violet-400">
-              Hunt • Shiny
-            </p>
-
-            <h1 className="mt-3 text-4xl font-black tracking-tight md:text-5xl">
-              Shiny Hunt
+            <h1 className="text-4xl font-black tracking-tight text-white md:text-5xl">
+              Players
             </h1>
 
-            <p className="mt-4 text-base leading-7 text-gray-400 md:text-lg">
-              Coleções, rankings, tiers e informações utilizadas
-              pelo neverTakeBan para Shiny Hunting.
+            <p className="mt-4 text-lg leading-8 text-gray-400">
+              Shinies registrados pelos membros
+              do neverTakeBan.
             </p>
           </div>
         </div>
       </section>
 
       <section className="mx-auto max-w-7xl px-6 py-12">
-        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-          <Link
-            href="/hunt/shiny/players"
-            className="group rounded-2xl border border-white/[0.07] bg-[#0d111c] p-7 transition duration-200 hover:-translate-y-1 hover:border-violet-500/30 hover:bg-[#111625] hover:shadow-2xl hover:shadow-violet-950/20"
-          >
-            <div className="flex items-start justify-between">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-violet-500/20 bg-violet-500/10 text-2xl">
-                👥
-              </div>
-
-              <span className="text-xl text-gray-700 transition group-hover:translate-x-1 group-hover:text-violet-400">
-                →
-              </span>
-            </div>
-
-            <h2 className="mt-7 text-2xl font-black">
-              Coleções dos Players
+        {players.length === 0 ? (
+          <div className="rounded-2xl border border-white/[0.07] bg-[#0d111c] p-10 text-center">
+            <h2 className="text-xl font-bold text-white">
+              Nenhum player encontrado
             </h2>
 
-            <p className="mt-3 leading-6 text-gray-500">
-              Veja os Shinies registrados pelos membros do
-              neverTakeBan diretamente através do ShinyBoard.
+            <p className="mt-2 text-sm text-gray-500">
+              Nenhum player foi encontrado no
+              banco de dados.
             </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {players.map((player) => (
+              <Link
+                key={player.id}
+                href={`/hunt/shiny/players/${encodeURIComponent(
+                  player.username
+                )}`}
+                className="group rounded-2xl border border-white/[0.07] bg-[#0d111c] p-6 transition duration-200 hover:-translate-y-1 hover:border-violet-500/30 hover:bg-[#111625] hover:shadow-2xl hover:shadow-violet-950/20"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-violet-500/20 bg-violet-500/10 text-xl">
+                    ✦
+                  </div>
 
-            <div className="mt-7 border-t border-white/[0.06] pt-4 text-xs font-bold uppercase tracking-widest text-gray-600 transition group-hover:text-violet-400">
-              Ver coleções
-            </div>
-          </Link>
+                  <span className="text-sm text-gray-600 transition group-hover:translate-x-1 group-hover:text-violet-400">
+                    →
+                  </span>
+                </div>
 
-          <Link
-            href="/hunt/shiny/tiers"
-            className="group rounded-2xl border border-white/[0.07] bg-[#0d111c] p-7 transition duration-200 hover:-translate-y-1 hover:border-violet-500/30 hover:bg-[#111625] hover:shadow-2xl hover:shadow-violet-950/20"
-          >
-            <div className="flex items-start justify-between">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-yellow-500/20 bg-yellow-500/10 text-2xl">
-                ✨
-              </div>
+                <h2 className="mt-5 text-xl font-black text-white">
+                  {player.username}
+                </h2>
 
-              <span className="text-xl text-gray-700 transition group-hover:translate-x-1 group-hover:text-violet-400">
-                →
-              </span>
-            </div>
+                <div className="mt-5 grid grid-cols-2 gap-3">
+                  <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                    <span className="block text-xs uppercase tracking-wider text-gray-600">
+                      Shinies
+                    </span>
 
-            <h2 className="mt-7 text-2xl font-black">
-              Shiny Tiers
-            </h2>
+                    <strong className="mt-1 block text-lg text-violet-400">
+                      {player.total_shinies}
+                    </strong>
+                  </div>
 
-            <p className="mt-3 leading-6 text-gray-500">
-              Consulte a classificação dos Shinies e a
-              pontuação utilizada pelo time.
-            </p>
+                  <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                    <span className="block text-xs uppercase tracking-wider text-gray-600">
+                      Encontros
+                    </span>
 
-            <div className="mt-7 border-t border-white/[0.06] pt-4 text-xs font-bold uppercase tracking-widest text-gray-600 transition group-hover:text-violet-400">
-              Ver tiers
-            </div>
-          </Link>
-        </div>
+                    <strong className="mt-1 block text-lg text-white">
+                      {player.total_encounters.toLocaleString(
+                        "pt-BR"
+                      )}
+                    </strong>
+                  </div>
+                </div>
+
+                <div className="mt-5 border-t border-white/[0.06] pt-4 text-xs font-bold uppercase tracking-wider text-gray-600 transition group-hover:text-violet-400">
+                  Ver shinies
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
       </section>
     </main>
   );

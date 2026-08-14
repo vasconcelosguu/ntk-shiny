@@ -1,5 +1,5 @@
 import {
-  getPokemonShinySprites,
+  getPokemonShinySprite,
 } from "./pokemon";
 
 export type ShinyEntry = {
@@ -124,12 +124,19 @@ console.log(
         parsedShinies.map(
           async (shiny) => {
             const spriteUrls =
-              await getPokemonShinySprites(
+              await getPokemonShinySprite(
                 shiny.displayName
               );
 
+            const resolvedSpriteUrls =
+              Array.isArray(spriteUrls)
+                ? spriteUrls
+                : spriteUrls
+                ? [spriteUrls]
+                : [];
+
             const sprite =
-              spriteUrls[0] ?? null;
+              resolvedSpriteUrls[0] ?? null;
 
             console.log(
               `[SHINY] ${shiny.displayName}`
@@ -142,13 +149,14 @@ console.log(
 
             console.log(
               `[SHINY] Fallbacks:`,
-              spriteUrls
+              resolvedSpriteUrls
             );
 
             return {
               ...shiny,
               sprite,
-              spriteUrls,
+              spriteUrls:
+                resolvedSpriteUrls,
             };
           }
         )
