@@ -20,6 +20,10 @@ type PokemonApiResponse = {
   };
 };
 
+/**
+ * Converte nomes vindos do ShinyBoard/Supabase
+ * para o formato utilizado pela PokeAPI.
+ */
 function normalizeName(name: string): string {
   return name
     .trim()
@@ -32,21 +36,11 @@ function normalizeName(name: string): string {
 }
 
 /**
- * Busca a sprite shiny do Pokémon.
- *
- * Prioridade:
- *
- * 1. PokeAPI Showdown shiny animada
- * 2. CDN Showdown shiny animada
- * 3. Sprite shiny normal
- * 4. Official Artwork shiny
- *
- * O resultado é uma URL que pode ser utilizada
- * diretamente em <img src="..." />.
+ * Busca o Pokémon na PokeAPI.
  */
-export async function getPokemonShinySprite(
+async function getPokemonData(
   name: string
-): Promise<string | null> {
+): Promise<PokemonApiResponse | null> {
   const normalized = normalizeName(name);
 
   try {
@@ -69,66 +63,106 @@ export async function getPokemonShinySprite(
       return null;
     }
 
-    const data =
-      (await response.json()) as PokemonApiResponse;
-
-    /*
-     * ==========================================
-     * 1. SHOWDOWN SHINY ANIMADA
-     * ==========================================
-     *
-     * Essa é a opção que queremos usar.
-     *
-     * Normalmente é um GIF animado.
-     */
-    const animatedShiny =
-      data.sprites.other?.showdown?.front_shiny;
-
-    if (animatedShiny) {
-      return animatedShiny;
-    }
-
-    /*
-     * ==========================================
-     * 2. FALLBACK DIRETO PARA O CDN SHOWDOWN
-     * ==========================================
-     *
-     * Usamos o ID do Pokémon, não o nome.
-     */
-    if (data.id) {
-      return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/showdown/shiny/${data.id}.gif`;
-    }
-
-    /*
-     * ==========================================
-     * 3. SPRITE SHINY NORMAL
-     * ==========================================
-     */
-    if (data.sprites.front_shiny) {
-      return data.sprites.front_shiny;
-    }
-
-    /*
-     * ==========================================
-     * 4. OFFICIAL ARTWORK SHINY
-     * ==========================================
-     */
-    const artwork =
-      data.sprites.other?.[
-        "official-artwork"
-      ]?.front_shiny;
-
-    if (artwork) {
-      return artwork;
-    }
-
-    return null;
+    return (await response.json()) as PokemonApiResponse;
   } catch (error) {
-    console.error(
-      `Erro ao buscar sprite de ${name}:`,
+    console.warn(
+      `Erro ao buscar Pokémon ${name}:`,
       error
     );
 
     return null;
   }
+}
+
+/**
+ * Sprite shiny ANIMADO.
+ *
+ * Prioridade:
+ *
+ * 1. PokeAPI Showdown shiny
+ * 2. CDN do repositório PokeAPI
+ * 3. Sprite shiny normal
+ * 4. Official Artwork shiny
+ */
+export async function getPokemonShinyAnimatedSprite(
+  name: string
+): Promise<string | null> {
+  const normalized = normalizeName(name);
+
+  const data = await getPokemonData(name);
+
+  /*
+   * 1. Sprite animado da PokeAPI.
+   */
+  const showdown =
+    data?.sprites?.other?.showdown?.front_shiny;
+
+  if (showdown) {
+    return showdown;
+  }
+
+  /*
+   * 2. Fallback usando o ID.
+   *
+   * Esse caminho contém os GIFs animados
+   * do repositório oficial de sprites da PokeAPI.
+   */
+  if (data?.id) {
+    return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/showdown/shiny/${data.id}.gif`;
+  }
+
+  /*
+   * 3. Fallback para sprite shiny normal.
+   */
+  const shiny =
+    data?.sprites?.front_shiny;
+
+  if (shiny) {
+    return shiny;
+  }
+
+  /*
+   * 4. Fallback para artwork.
+   */
+  const artwork =
+    data?.sprites?.other?.[
+      "official-artwork"
+    ]?.front_shiny;
+
+  if (artwork) {
+    return artwork;
+  }
+
+  /*
+   * Último fallback.
+   */
+  return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/${normalized}.png`;
+}
+
+/**
+ * Mantido para outras páginas do projeto.
+ */
+export async function getPokemonShinySprite(
+  name: string
+): Promise<string | null> {
+  const data = await getPokemonData(name);
+
+  if (data?.sprites?.front_shiny) {
+    return data.sprites.front_shiny;
+  }
+
+  const artwork =
+    data?.sprites?.other?.[
+      "official-artwork"
+    ]?.front_shiny;
+
+  if (artwork) {
+    return artwork;
+  }
+
+  if (data?.id) {
+    return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/${data.id}.png`;
+  }
+
+  return null;
 }

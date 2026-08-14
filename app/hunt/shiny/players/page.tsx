@@ -5,7 +5,7 @@ import {
 } from "@/lib/shiny-db";
 
 import {
-  getPokemonShinySprite,
+  getPokemonShinyAnimatedSprite,
 } from "@/lib/pokemon";
 
 export const revalidate = 3600;
@@ -15,31 +15,35 @@ export default async function ShinyPlayersPage() {
     await getShinyPlayers();
 
   /*
-   * Busca as sprites dos previews
-   * de todos os jogadores em paralelo.
+   * Busca os sprites ANTES de renderizar a página.
+   *
+   * Isso é importante:
+   * a página não depende de o usuário
+   * abrir /[username] primeiro.
    */
   const playersWithSprites =
     await Promise.all(
-      players.map(async (player) => {
-        const previews =
-          await Promise.all(
-            player.previews.map(
-              async (pokemon) => ({
-                ...pokemon,
+      players.map(
+        async (player) => {
+          const sprites =
+            await Promise.all(
+              player.preview_pokemon.map(
+                async (pokemon) => ({
+                  pokemon,
+                  sprite:
+                    await getPokemonShinyAnimatedSprite(
+                      pokemon
+                    ),
+                })
+              )
+            );
 
-                sprite:
-                  await getPokemonShinySprite(
-                    pokemon.pokemon
-                  ),
-              })
-            )
-          );
-
-        return {
-          ...player,
-          previews,
-        };
-      })
+          return {
+            ...player,
+            sprites,
+          };
+        }
+      )
     );
 
   return (
@@ -48,7 +52,6 @@ export default async function ShinyPlayersPage() {
       {/* HERO */}
 
       <section className="border-b border-white/[0.06] bg-gradient-to-b from-violet-950/20 to-transparent">
-
         <div className="mx-auto max-w-7xl px-6 pb-14 pt-16">
 
           <div className="max-w-3xl">
@@ -62,16 +65,14 @@ export default async function ShinyPlayersPage() {
             </h1>
 
             <p className="mt-4 text-lg leading-8 text-gray-400">
-              Coleção de Shinies dos membros
+              Shinies registrados pelos membros
               do neverTakeBan.
             </p>
 
           </div>
 
         </div>
-
       </section>
-
 
       {/* PLAYERS */}
 
@@ -86,9 +87,8 @@ export default async function ShinyPlayersPage() {
             </h2>
 
             <p className="mt-2 text-sm text-gray-500">
-              Execute o sincronizador do
-              ShinyBoard para importar os
-              dados.
+              Execute o sincronizador do ShinyBoard
+              para importar os dados.
             </p>
 
           </div>
@@ -105,162 +105,76 @@ export default async function ShinyPlayersPage() {
                   href={`/hunt/shiny/players/${encodeURIComponent(
                     player.username
                   )}`}
-                  className="
-                    group
-                    relative
-                    overflow-hidden
-                    rounded-2xl
-                    border
-                    border-white/[0.07]
-                    bg-[#0d111c]
-                    p-6
-                    transition
-                    duration-300
-                    hover:-translate-y-1
-                    hover:border-violet-500/30
-                    hover:bg-[#111625]
-                    hover:shadow-2xl
-                    hover:shadow-violet-950/20
-                  "
+                  className="group rounded-2xl border border-white/[0.07] bg-[#0d111c] p-5 transition duration-200 hover:-translate-y-1 hover:border-violet-500/30 hover:bg-[#111625] hover:shadow-2xl hover:shadow-violet-950/20"
                 >
 
-                  {/* brilho de fundo */}
+                  {/* TOPO */}
 
-                  <div
-                    className="
-                      pointer-events-none
-                      absolute
-                      -right-16
-                      -top-16
-                      h-40
-                      w-40
-                      rounded-full
-                      bg-violet-600/10
-                      blur-3xl
-                      transition
-                      duration-500
-                      group-hover:bg-violet-500/20
-                    "
-                  />
-
-
-                  {/* HEADER */}
-
-                  <div className="relative flex items-start justify-between">
+                  <div className="flex items-start justify-between">
 
                     <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-violet-500/20 bg-violet-500/10 text-xl">
                       ✦
                     </div>
 
-                    <span className="text-sm text-gray-600 transition duration-200 group-hover:translate-x-1 group-hover:text-violet-400">
+                    <span className="text-sm text-gray-600 transition group-hover:translate-x-1 group-hover:text-violet-400">
                       →
                     </span>
 
                   </div>
 
+                  {/* POKÉMON */}
 
-                  {/* SPRITES */}
+                  {player.sprites.length > 0 && (
 
-                  <div className="relative mt-4 flex h-36 items-end justify-center">
+                    <div className="mt-3 flex h-28 items-end gap-1 overflow-hidden">
 
-                    {player.previews.length > 0 ? (
+                      {player.sprites.map(
+                        ({
+                          pokemon,
+                          sprite,
+                        }) => (
 
-                      <div className="flex h-full items-end justify-center">
+                          <div
+                            key={pokemon}
+                            className="relative flex h-24 flex-1 items-end justify-center overflow-hidden"
+                          >
 
-                        {player.previews.map(
-                          (pokemon, index) => {
+                            {sprite ? (
 
-                            /*
-                             * Quanto mais Pokémon,
-                             * menor cada sprite.
-                             */
-                            const size =
-                              player.previews.length >= 5
-                                ? "h-24 w-24"
-                                : player.previews.length >= 4
-                                ? "h-28 w-28"
-                                : "h-32 w-32";
+                              <img
+                                src={sprite}
+                                alt={`Shiny ${pokemon}`}
+                                className="h-24 w-24 object-contain pixelated transition duration-300 group-hover:scale-110"
+                                loading="eager"
+                                decoding="async"
+                              />
 
-                            return (
-                              <div
-                                key={pokemon.id}
-                                className={`
-                                  relative
-                                  -mx-2
-                                  ${size}
-                                  transition
-                                  duration-300
-                                  group-hover:-translate-y-2
-                                `}
-                                style={{
-                                  zIndex:
-                                    player.previews.length -
-                                    index,
-                                  animationDelay: `${index * 80}ms`,
-                                }}
-                              >
+                            ) : (
 
-                                {pokemon.sprite ? (
-
-                                  <img
-                                    src={
-                                      pokemon.sprite
-                                    }
-                                    alt={
-                                      `Shiny ${pokemon.display_name}`
-                                    }
-                                    loading="lazy"
-                                    className="
-                                      h-full
-                                      w-full
-                                      object-contain
-                                      drop-shadow-[0_8px_10px_rgba(0,0,0,0.45)]
-                                      transition
-                                      duration-300
-                                      group-hover:scale-110
-                                    "
-                                  />
-
-                                ) : (
-
-                                  <div className="flex h-full w-full items-center justify-center text-gray-700">
-                                    ?
-                                  </div>
-
-                                )}
-
+                              <div className="flex h-20 w-20 items-center justify-center text-xs text-gray-700">
+                                ?
                               </div>
-                            );
-                          }
-                        )}
 
-                      </div>
+                            )}
 
-                    ) : (
+                          </div>
 
-                      <div className="flex h-28 w-28 items-center justify-center rounded-full border border-white/[0.06] bg-white/[0.02] text-4xl text-gray-700">
-                        ✦
-                      </div>
+                        )
+                      )}
 
-                    )}
+                    </div>
 
-                  </div>
-
+                  )}
 
                   {/* PLAYER */}
 
-                  <div className="relative mt-3">
+                  <h2 className="mt-3 text-xl font-black text-white">
+                    {player.username}
+                  </h2>
 
-                    <h2 className="text-xl font-black text-white">
-                      {player.username}
-                    </h2>
+                  {/* ESTATÍSTICAS */}
 
-                  </div>
-
-
-                  {/* STATS */}
-
-                  <div className="relative mt-5 grid grid-cols-2 gap-3">
+                  <div className="mt-4 grid grid-cols-2 gap-3">
 
                     <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
 
@@ -273,7 +187,6 @@ export default async function ShinyPlayersPage() {
                       </strong>
 
                     </div>
-
 
                     <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
 
@@ -291,11 +204,10 @@ export default async function ShinyPlayersPage() {
 
                   </div>
 
-
                   {/* FOOTER */}
 
-                  <div className="relative mt-5 border-t border-white/[0.06] pt-4 text-xs font-bold uppercase tracking-wider text-gray-600 transition group-hover:text-violet-400">
-                    Ver shinies →
+                  <div className="mt-4 border-t border-white/[0.06] pt-4 text-xs font-bold uppercase tracking-wider text-gray-600 transition group-hover:text-violet-400">
+                    Ver shinies
                   </div>
 
                 </Link>

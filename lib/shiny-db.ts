@@ -1,12 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
 
-export type ShinyPreview = {
-  id: string;
-  pokemon: string;
-  display_name: string;
-  encounters: number;
-};
-
 export type ShinyPlayer = {
   id: string;
   username: string;
@@ -15,7 +8,7 @@ export type ShinyPlayer = {
   total_shinies: number;
   total_encounters: number;
 
-  previews: ShinyPreview[];
+  preview_pokemon: string[];
 };
 
 export type ShinyEntry = {
@@ -36,10 +29,10 @@ export type ShinyEntry = {
   source_url: string | null;
 };
 
-
 /**
- * Busca todos os players e alguns shinies
- * para serem utilizados como preview.
+ * Busca todos os players.
+ *
+ * Os dados vêm exclusivamente do Supabase.
  */
 export async function getShinyPlayers(): Promise<
   ShinyPlayer[]
@@ -86,7 +79,6 @@ export async function getShinyPlayers(): Promise<
       id,
       player_id,
       pokemon,
-      display_name,
       encounters
     `)
     .in("player_id", playerIds)
@@ -101,103 +93,75 @@ export async function getShinyPlayers(): Promise<
     );
 
     return players.map((player) => ({
-      id: player.id,
-      username: player.username,
-      shinyboard_username:
-        player.shinyboard_username,
-
+      ...player,
       total_shinies: 0,
       total_encounters: 0,
-
-      previews: [],
+      preview_pokemon: [],
     }));
   }
 
   const entriesByPlayer = new Map<
     string,
-    ShinyPreview[]
-  >();
-
-  const statsByPlayer = new Map<
-    string,
     {
       shinies: number;
       encounters: number;
+      pokemon: string[];
     }
   >();
 
   for (const entry of entries ?? []) {
-    /*
-     * Estatísticas
-     */
-    const stats =
-      statsByPlayer.get(entry.player_id) ?? {
+    const current =
+      entriesByPlayer.get(entry.player_id) ?? {
         shinies: 0,
         encounters: 0,
+        pokemon: [],
       };
 
-    stats.shinies += 1;
-    stats.encounters +=
+    current.shinies += 1;
+
+    current.encounters +=
       entry.encounters ?? 0;
 
-    statsByPlayer.set(
-      entry.player_id,
-      stats
-    );
-
     /*
-     * Preview.
-     *
-     * Pegamos no máximo 5 Pokémon por player.
+     * Guardamos até 5 Pokémon para o card.
      */
-    const previews =
-      entriesByPlayer.get(
-        entry.player_id
-      ) ?? [];
-
-    if (previews.length < 5) {
-      previews.push({
-        id: entry.id,
-        pokemon: entry.pokemon,
-        display_name:
-          entry.display_name,
-        encounters:
-          entry.encounters ?? 0,
-      });
-
-      entriesByPlayer.set(
-        entry.player_id,
-        previews
+    if (
+      current.pokemon.length < 5 &&
+      entry.pokemon
+    ) {
+      current.pokemon.push(
+        entry.pokemon
       );
     }
+
+    entriesByPlayer.set(
+      entry.player_id,
+      current
+    );
   }
 
   return players.map((player) => {
     const stats =
-      statsByPlayer.get(player.id) ?? {
+      entriesByPlayer.get(player.id) ?? {
         shinies: 0,
         encounters: 0,
+        pokemon: [],
       };
 
     return {
-      id: player.id,
-      username: player.username,
-      shinyboard_username:
-        player.shinyboard_username,
+      ...player,
 
-      total_shinies: stats.shinies,
+      total_shinies:
+        stats.shinies,
 
       total_encounters:
         stats.encounters,
 
-      previews:
-        entriesByPlayer.get(
-          player.id
-        ) ?? [],
+      preview_pokemon:
+        stats.pokemon,
     };
   });
 }
-
 
 /**
  * Busca um player específico.
@@ -214,8 +178,8 @@ export async function getShinyPlayer(
       .toLowerCase();
 
   return (
-    players.find((player) => {
-      return (
+    players.find(
+      (player) =>
         player.username
           .trim()
           .toLowerCase() ===
@@ -224,11 +188,9 @@ export async function getShinyPlayer(
           .trim()
           .toLowerCase() ===
           normalized
-      );
-    }) ?? null
+    ) ?? null
   );
 }
-
 
 /**
  * Busca todos os shinies de um player.
@@ -273,9 +235,8 @@ export async function getShinyEntries(
   return data ?? [];
 }
 
-
 /**
- * Busca player + seus shinies.
+ * Busca player + shinies.
  */
 export async function getShinyPlayerWithEntries(
   username: string
@@ -291,7 +252,9 @@ export async function getShinyPlayerWithEntries(
   }
 
   const entries =
-    await getShinyEntries(player.id);
+    await getShinyEntries(
+      player.id
+    );
 
   return {
     player,
