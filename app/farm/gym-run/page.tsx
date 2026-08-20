@@ -1,1972 +1,1859 @@
-"use client";
-
 import Link from "next/link";
-import { useState } from "react";
-
-/* =========================================================
-   TYPES
-========================================================= */
 
 type Pokemon = {
   name: string;
-  item: string;
-  ability: string;
-  nature: string;
-  ivs: string;
-  evs: string;
-  moves: string[];
-  sprite: string;
+  id: number;
 };
 
-type Step = {
-  title?: string;
-  text?: string;
-  lead?: string[];
-  actions?: string[];
-  condition?: string;
-  note?: string;
-  heal?: boolean;
+type Action = {
+  pokemon: string;
+  move: string;
+};
+
+type Condition = {
+  title: string;
+  enemy?: string[];
+  steps: string[];
 };
 
 type Gym = {
   city: string;
   leader: string;
-  image?: string;
-  optional?: boolean;
-  requirement?: string;
-  steps: Step[];
+  region: string;
+
+  map?: string;
+
+  lead: Pokemon[];
+
+  mainActions: Action[];
+
+  switches?: string[];
+
+  conditions?: Condition[];
+
+  healAfter?: boolean;
 };
 
-type Region = {
-  name: string;
-  gyms: Gym[];
+const SPRITE_BASE =
+  "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork";
+
+const sprites: Record<string, number> = {
+  Blastoise: 9,
+  Togekiss: 468,
+  Typhlosion: 157,
+  Garchomp: 445,
+  Weezing: 110,
+  Vanilluxe: 584,
+
+  Houndoom: 229,
+  Arcanine: 59,
+  Swellow: 277,
+  Zebstrika: 523,
+  Politoed: 186,
+  Flareon: 136,
+  Moltres: 146,
+  Blissey: 242,
+  Victreebel: 71,
+  Espeon: 196,
+  Wobbuffet: 202,
+  Golem: 76,
+  Toxicroak: 454,
+  Ludicolo: 272,
+  Aerodactyl: 142,
+  Swampert: 260,
+
+  Ninetales: 38,
+  Whimsicott: 547,
+  Roserade: 407,
+  Infernape: 392,
+  Mienshao: 620,
+  Probopass: 476,
+  Tyranitar: 248,
+  Excadrill: 530,
+  Cradily: 346,
+  Slowbro: 80,
+  Sharpedo: 319,
+
+  Metagross: 376,
+  Zapdos: 145,
+  Pelipper: 279,
+  Articuno: 144,
+  Walrein: 365,
+  Froslass: 478,
+  Glalie: 362,
+  Mamoswine: 473,
+
+  Pidgeot: 18,
+  Skarmory: 227,
+  Aerodactyl2: 142,
+
+  Braviary: 628,
+  Mandibuzz: 630,
+  Swanna: 581,
+  Unfezant: 521,
+
+  Galvantula: 596,
+  Emolga: 587,
+
+  Emboar: 500,
+  Lapras: 131,
+  Samurott: 503,
+
+  Sableye: 302,
+  Torterra: 389,
+
+  Stantler: 234,
+
+  Leavanny: 542,
+  Floatzel: 419,
+
+  Piloswine: 221,
 };
 
-/* =========================================================
-   TEAM
-========================================================= */
-
-const team: Pokemon[] = [
-  {
-    name: "Typhlosion",
-    item: "Choice Specs",
-    ability: "Blaze",
-    nature: "Modest",
-    ivs: "10-31 HP / 10-31 Def / 31 SpA / 31 Spe",
-    evs: "252 SpA / 6 SpD / 252 Spe",
-    moves: [
-      "Eruption",
-      "Swift",
-      "Incinerate",
-      "Cut",
-    ],
-    sprite:
-      "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/157.png",
-  },
-
-  {
-    name: "Blastoise",
-    item: "Choice Scarf",
-    ability: "Torrent",
-    nature: "Mild",
-    ivs: "0-25 HP / 0-25 Def / 31 SpA / 31 Spe",
-    evs: "252 SpA / 6 SpD / 252 Spe",
-    moves: [
-      "Water Spout",
-      "Blizzard",
-      "Fake Out",
-      "Helping Hand",
-    ],
-    sprite:
-      "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/9.png",
-  },
-
-  {
-    name: "Vanilluxe",
-    item: "Choice Scarf",
-    ability: "Snow Warning",
-    nature: "Modest",
-    ivs: "28-31 HP* / 28-31 Def* / 31 SpA / 31 Spe",
-    evs: "6 Def / 252 SpA / 252 Spe",
-    moves: [
-      "Ice Beam",
-      "Blizzard",
-      "Hyper Voice",
-    ],
-    sprite:
-      "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/584.png",
-  },
-
-  {
-    name: "Garchomp",
-    item: "Choice Band",
-    ability: "Sand Veil / Rough Skin*",
-    nature: "Lonely",
-    ivs: "0-8 HP* / 0-8 Def* / 31 Atk / 25-31 SpD / 31 Spe",
-    evs: "252 Atk / 26 SpD / 232 Spe",
-    moves: [
-      "Earthquake",
-      "Dragon Claw",
-      "Sunny Day",
-      "Helping Hand",
-    ],
-    sprite:
-      "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/445.png",
-  },
-
-  {
-    name: "Weezing",
-    item: "Choice Band",
-    ability: "Reactive Gas",
-    nature: "Adamant",
-    ivs: "31 Atk / 31 Spe",
-    evs: "252 Atk / 6 Def / 252 Spe",
-    moves: [
-      "Assurance",
-      "Explosion",
-      "Incinerate",
-      "Rain Dance",
-    ],
-    sprite:
-      "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/110.png",
-  },
-
-  {
-    name: "Togekiss",
-    item: "Choice Specs",
-    ability: "Hustle",
-    nature: "Modest",
-    ivs: "31 SpA / 31 Spe",
-    evs: "252 SpA / 6 SpD / 252 Spe",
-    moves: [
-      "Hyper Voice",
-      "Helping Hand",
-      "Shock Wave",
-      "Fly",
-    ],
-    sprite:
-      "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/468.png",
-  },
-];
-
-/* =========================================================
-   ROUTE
-========================================================= */
-
-const regions: Region[] = [
-  {
-    name: "Hoenn",
-
-    gyms: [
-      {
-        city: "Lavaridge Town",
-        leader: "Flannery",
-        steps: [
-          {
-            title: "Lead",
-            lead: ["Blastoise", "Togekiss"],
-            actions: [
-              "Water Spout + Helping Hand",
-            ],
-          },
-
-          {
-            condition:
-              "Se aparecer Houndoom ou Arcanine nível 85",
-            actions: [
-              "Water Spout + Hyper Voice",
-            ],
-            note:
-              "Baixa chance de terminar em 4 turnos. Cure se o Blastoise estiver danificado.",
-          },
-        ],
-      },
-
-      {
-        city: "Dewford Town",
-        leader: "Brawly",
-        steps: [
-          {
-            title: "Lead",
-            lead: ["Blastoise", "Vanilluxe"],
-            actions: [
-              "Water Spout + Blizzard",
-            ],
-            note:
-              "Cure se o Vanilluxe for derrotado.",
-          },
-        ],
-      },
-
-      {
-        city: "Fortree City",
-        leader: "Winona",
-        steps: [
-          {
-            title: "Lead",
-            lead: ["Blastoise", "Weezing"],
-            actions: [
-              "T1: Water Spout + Explosion",
-            ],
-          },
-
-          {
-            title: "Depois da Explosion",
-            lead: ["Typhlosion", "Togekiss"],
-            actions: [
-              "T2: Eruption + Hyper Voice",
-            ],
-          },
-
-          {
-            condition: "Se aparecer Swellow",
-            actions: [
-              "T1: Fake Out em Swellow + Explosion",
-            ],
-          },
-
-          {
-            title: "Contra Swellow",
-            lead: ["Vanilluxe", "Togekiss"],
-            actions: [
-              "T2: Blizzard + Hyper Voice",
-            ],
-          },
-        ],
-      },
-
-      {
-        city: "Mauville City",
-        leader: "Wattson",
-        steps: [
-          {
-            title: "Lead",
-            lead: ["Typhlosion", "Garchomp"],
-            actions: [
-              "Eruption + Dragon Claw",
-            ],
-          },
-
-          {
-            condition:
-              "Se aparecer Zebstrika com Air Balloon",
-            actions: [
-              "Retire Garchomp.",
-              "Envie Togekiss.",
-              "Eruption + Hyper Voice",
-            ],
-            heal: true,
-          },
-        ],
-      },
-
-      {
-        city: "Rustboro City",
-        leader: "Roxanne",
-        steps: [
-          {
-            title: "Lead",
-            lead: ["Blastoise", "Weezing"],
-            actions: [
-              "Water Spout + Assurance",
-            ],
-          },
-        ],
-      },
-    ],
-  },
-
-  {
-    name: "Kanto",
-
-    gyms: [
-      {
-        city: "Vermilion City",
-        leader: "Lt. Surge",
-        steps: [
-          {
-            title: "Lead",
-            lead: ["Typhlosion", "Garchomp"],
-            actions: [
-              "Eruption + Dragon Claw",
-            ],
-          },
-
-          {
-            condition: "Se aparecer Politoed",
-            actions: [
-              "T1: Swift + Earthquake",
-              "Envie Vanilluxe.",
-              "T2: Blizzard + Earthquake",
-            ],
-            note:
-              "Se Vanilluxe morrer para um Earthquake crítico, envie Togekiss e use Hyper Voice.",
-          },
-
-          {
-            note:
-              "Requer cura de Typhlosion e Vanilluxe.",
-          },
-        ],
-      },
-
-      {
-        city: "Cinnabar Island",
-        leader: "Blaine",
-        steps: [
-          {
-            title: "Lead",
-            lead: ["Blastoise", "Weezing"],
-          },
-
-          {
-            condition:
-              "Se aparecer Arcanine, Charizard ou Typhlosion",
-            actions: [
-              "T1: Water Spout.",
-              "Retire Weezing.",
-              "Envie Vanilluxe.",
-              "T2: Water Spout + Blizzard",
-            ],
-          },
-
-          {
-            condition: "Se aparecer Flareon",
-            actions: [
-              "Water Spout + Rain Dance",
-            ],
-          },
-
-          {
-            condition:
-              "Se aparecer Moltres com Blissey",
-            actions: [
-              "Water Spout + Assurance",
-              "Priorize Assurance em Blissey.",
-            ],
-          },
-        ],
-      },
-
-      {
-        city: "Celadon City",
-        leader: "Erika",
-        steps: [
-          {
-            title: "Lead",
-            lead: ["Blastoise", "Weezing"],
-            actions: [
-              "T1: Water Spout + Explosion",
-              "Envie Typhlosion e Togekiss.",
-              "T2: Eruption + Hyper Voice",
-            ],
-          },
-
-          {
-            condition:
-              "Se Victreebel estiver no início",
-            actions: [
-              "Envie Typhlosion e Garchomp.",
-              "T2: Eruption + Dragon Claw",
-            ],
-          },
-        ],
-      },
-
-      {
-        city: "Saffron City",
-        leader: "Sabrina",
-        steps: [
-          {
-            title: "Puzzle",
-            actions: [
-              "Left → Down → Left → Left",
-            ],
-          },
-
-          {
-            title: "Lead",
-            lead: ["Typhlosion", "Garchomp"],
-            actions: [
-              "Eruption + Dragon Claw",
-            ],
-          },
-
-          {
-            condition:
-              "Se aparecer Espeon ou Wobbuffet",
-            actions: [
-              "T1: Eruption + Earthquake",
-              "Envie Togekiss.",
-              "T2: Hyper Voice + Earthquake",
-            ],
-            heal: true,
-          },
-        ],
-      },
-
-      {
-        city: "Pewter City",
-        leader: "Brock",
-        optional: true,
-        steps: [
-          {
-            title: "Lead",
-            lead: ["Blastoise", "Weezing"],
-          },
-
-          {
-            condition:
-              "Se aparecer Golem ou Toxicroak",
-            actions: [
-              "Water Spout + Assurance",
-            ],
-          },
-
-          {
-            condition:
-              "Se aparecer Ludicolo ou Aerodactyl",
-            actions: [
-              "T1: Water Spout + Explosion",
-              "Envie Togekiss e Garchomp.",
-              "T2: Hyper Voice + Earthquake",
-            ],
-          },
-
-          {
-            condition: "Se aparecer Swampert",
-            actions: [
-              "T1: Water Spout + Explosion",
-              "Envie Typhlosion e Togekiss.",
-              "T2: Eruption + Hyper Voice",
-            ],
-            heal: true,
-          },
-        ],
-      },
-    ],
-  },
-
-  {
-    name: "Sinnoh",
-
-    gyms: [
-      {
-        city: "Eterna City",
-        leader: "Gardenia",
-        steps: [
-          {
-            title: "Lead",
-            lead: ["Typhlosion", "Togekiss"],
-            actions: [
-              "Swift + Hyper Voice",
-            ],
-          },
-
-          {
-            condition: "Se aparecer Ninetales",
-            actions: [
-              "T1: Incinerate + Hyper Voice",
-              "T2: Incinerate",
-              "Retire Togekiss.",
-              "Envie Weezing.",
-              "T3: Incinerate + Assurance",
-            ],
-            note:
-              "Pode ser necessário curar caso Typhlosion esteja com pouco HP.",
-          },
-
-          {
-            condition: "Se aparecer Whimsicott",
-            actions: [
-              "T1: Eruption",
-              "Retire Togekiss.",
-              "Envie Weezing.",
-              "T2: Eruption + Incinerate",
-            ],
-          },
-
-          {
-            condition: "Se aparecer Roserade",
-            actions: [
-              "Eruption + Hyper Voice",
-            ],
-          },
-        ],
-      },
-
-      {
-        city: "Veilstone City",
-        leader: "Maylene",
-        steps: [
-          {
-            title: "Lead",
-            lead: ["Typhlosion", "Togekiss"],
-            actions: [
-              "Eruption + Helping Hand",
-            ],
-          },
-
-          {
-            condition: "Se aparecer Infernape",
-            actions: [
-              "T1: Eruption + Hyper Voice",
-            ],
-          },
-
-          {
-            condition: "Se aparecer Mienshao",
-            actions: [
-              "T1: Incinerate + Hyper Voice",
-            ],
-            note:
-              "Pode ser necessário curar caso Typhlosion esteja com pouco HP.",
-          },
-        ],
-      },
-
-      {
-        city: "Oreburgh City",
-        leader: "Roark",
-        steps: [
-          {
-            title: "Lead",
-            lead: ["Blastoise", "Weezing"],
-            actions: [
-              "Water Spout + Assurance",
-            ],
-          },
-
-          {
-            condition: "Se aparecer Probopass",
-            actions: [
-              "T1: Water Spout",
-              "Retire Weezing.",
-              "Envie Vanilluxe.",
-              "T2: Water Spout + Blizzard",
-            ],
-          },
-
-          {
-            condition:
-              "Se aparecer Tyranitar e Excadrill",
-            actions: [
-              "T1: Water Spout + Assurance",
-              "Priorize Assurance em Cradily.",
-            ],
-          },
-
-          {
-            condition:
-              "Se Cradily e Slowbro aparecerem juntos no turno 2",
-            actions: [
-              "Se Weezing for derrotado por Psychic crítico, envie Vanilluxe.",
-              "Water Spout + Blizzard",
-            ],
-          },
-        ],
-      },
-
-      {
-        city: "Pastoria City",
-        leader: "Crasher Wake",
-        steps: [
-          {
-            title: "Lead",
-            lead: ["Blastoise", "Weezing"],
-            actions: [
-              "T1: Fake Out em Sharpedo + Explosion",
-              "Envie Togekiss e Garchomp.",
-              "T2: Hyper Voice + Earthquake",
-            ],
-            note:
-              "Pode ser necessário curar se Garchomp estiver danificado.",
-          },
-        ],
-      },
-    ],
-  },
-
-  {
-    name: "Johto",
-
-    gyms: [
-      {
-        city: "Cianwood City",
-        leader: "Chuck",
-        steps: [
-          {
-            title: "Lead",
-            lead: ["Togekiss", "Garchomp"],
-            actions: [
-              "T1: Hyper Voice + Earthquake",
-            ],
-          },
-        ],
-      },
-
-      {
-        city: "Goldenrod City",
-        leader: "Whitney",
-        steps: [
-          {
-            title: "Lead",
-            lead: ["Garchomp", "Togekiss"],
-            actions: [
-              "T1: Earthquake + Hyper Voice",
-            ],
-            note:
-              "Garchomp deve estar no Slot 1 e Togekiss no Slot 2.",
-          },
-
-          {
-            note:
-              "Envie Typhlosion caso Garchomp seja derrotado.",
-            heal: true,
-          },
-        ],
-      },
-
-      {
-        city: "Olivine City",
-        leader: "Jasmine",
-        steps: [
-          {
-            title: "Lead",
-            lead: ["Typhlosion", "Weezing"],
-            actions: [
-              "T1: Eruption + Assurance",
-            ],
-          },
-
-          {
-            condition: "Se aparecer Metagross",
-            actions: [
-              "T1: Eruption + Explosion",
-              "Envie Togekiss e Garchomp.",
-              "T2: Hyper Voice + Earthquake",
-            ],
-          },
-        ],
-      },
-
-      {
-        city: "Violet City",
-        leader: "Falkner",
-        steps: [
-          {
-            title: "Lead",
-            lead: ["Blastoise", "Vanilluxe"],
-            actions: [
-              "T1: Water Spout + Blizzard",
-            ],
-          },
-
-          {
-            condition:
-              "Se aparecer Zapdos ou Pelipper",
-            actions: [
-              "T1: Water Spout + Hyper Voice",
-            ],
-          },
-
-          {
-            note:
-              "A chance de Pidgeot ser lead é 20%. A chance de sofrer hit + flinch de Rock Slide do Choice Scarf Aerodactyl é 30%. Assumindo entrada no turno 2 com Skarmory, a chance de limpar o lead em mais de 3 turnos é 24,3%. A chance geral de uma run de 4 turnos nesse Gym é 4,86%.",
-          },
-
-          {
-            note:
-              "Pode ser necessário curar caso o solve de Olivine tenha usado Explosion.",
-          },
-        ],
-      },
-
-      {
-        city: "Blackthorn City",
-        leader: "Clair",
-        steps: [
-          {
-            title: "Lead",
-            lead: ["Blastoise", "Weezing"],
-            actions: [
-              "T1: Water Spout + Explosion",
-              "Envie Togekiss e Vanilluxe.",
-              "T2: Hyper Voice + Blizzard",
-            ],
-          },
-
-          {
-            condition: "Se aparecer Blastoise",
-            actions: [
-              "T1: Fake Out em Blastoise + Explosion",
-            ],
-            heal: true,
-          },
-        ],
-      },
-
-      {
-        city: "Mahogany Town",
-        leader: "Pryce",
-        optional: true,
-        requirement:
-          "Requer Garchomp morto. Pule caso Garchomp ainda esteja vivo.",
-        steps: [
-          {
-            title: "Lead",
-            lead: ["Weezing", "Garchomp"],
-          },
-
-          {
-            condition:
-              "Se aparecer Articuno ou Walrein",
-            actions: [
-              "T1: Explosion + Dragon Claw em Articuno/Walrein.",
-              "Envie Typhlosion e Togekiss.",
-              "T2: Eruption + Hyper Voice",
-            ],
-          },
-
-          {
-            condition: "Se aparecer Froslass",
-            actions: [
-              "T1: Explosion + Sunny Day",
-              "Envie Typhlosion e Blastoise.",
-              "T2: Eruption + Water Spout",
-            ],
-            note:
-              "É necessário restaurar o PP de Eruption do Typhlosion depois.",
-          },
-
-          {
-            condition: "Se aparecer Glalie",
-            actions: [
-              "T1: Explosion",
-              "Troque para Blastoise para servir de sacrifício.",
-              "Envie Typhlosion e Garchomp.",
-              "T2: Eruption + Earthquake",
-              "Envie Togekiss.",
-              "T3: Hyper Voice + Earthquake",
-            ],
-          },
-
-          {
-            condition: "Se aparecer Mamoswine",
-            actions: [
-              "T1: Explosion + Dragon Claw em Mamoswine.",
-              "Envie Blastoise e Typhlosion.",
-              "T2: Water Spout + Eruption",
-            ],
-          },
-        ],
-      },
-    ],
-  },
-
-  {
-    name: "Unova",
-
-    gyms: [
-      {
-        city: "Castelia City",
-        leader: "Burgh",
-        steps: [
-          {
-            title: "Lead",
-            lead: ["Blastoise", "Vanilluxe"],
-            actions: [
-              "Water Spout + Blizzard",
-            ],
-          },
-        ],
-      },
-
-      {
-        city: "Striaton City",
-        leader: "Chili / Cilan / Cress",
-        steps: [
-          {
-            condition: "Vs. Chili",
-            actions: [
-              "Lead: Garchomp + Togekiss",
-              "Earthquake + Hyper Voice",
-            ],
-          },
-
-          {
-            condition:
-              "Vs. Chili — Ninetales ou Stoutland",
-            actions: [
-              "Helping Hand + Hyper Voice",
-            ],
-          },
-
-          {
-            condition: "Vs. Cilan",
-            actions: [
-              "Lead: Typhlosion + Togekiss",
-              "Incinerate + Hyper Voice",
-            ],
-          },
-
-          {
-            condition:
-              "Vs. Cilan — Leavanny",
-            actions: [
-              "Eruption + Hyper Voice",
-            ],
-          },
-
-          {
-            condition: "Vs. Cress",
-            actions: [
-              "Lead: Typhlosion + Togekiss",
-              "Eruption + Hyper Voice",
-            ],
-          },
-
-          {
-            condition:
-              "Vs. Cress — Floatzel",
-            actions: [
-              "Retire Typhlosion.",
-              "Envie Vanilluxe.",
-              "Hyper Voice + Hyper Voice",
-            ],
-          },
-        ],
-      },
-
-      {
-        city: "Mistralton City",
-        leader: "Skyla",
-        steps: [
-          {
-            title: "Lead",
-            lead: ["Blastoise", "Vanilluxe"],
-          },
-
-          {
-            condition:
-              "Se aparecer Braviary ou Mandibuzz",
-            actions: [
-              "Water Spout + Blizzard",
-            ],
-          },
-
-          {
-            condition:
-              "Se aparecer Swanna ou Whimsicott",
-            actions: [
-              "Blizzard + Blizzard",
-            ],
-          },
-
-          {
-            condition: "Se aparecer Unfezant",
-            actions: [
-              "T1: Blizzard",
-              "Retire Blastoise.",
-              "Envie Weezing.",
-              "T2: Assurance + Blizzard",
-            ],
-          },
-        ],
-      },
-
-      {
-        city: "Nimbasa City",
-        leader: "Elesa",
-        steps: [
-          {
-            title: "Lead",
-            lead: ["Blastoise", "Weezing"],
-            actions: [
-              "T1: Water Spout + Explosion",
-            ],
-            note:
-              "Use Fake Out em Emolga ou Galvantula quando necessário.",
-          },
-
-          {
-            title: "Depois da Explosion",
-            lead: ["Typhlosion", "Togekiss"],
-            actions: [
-              "T2: Eruption + Hyper Voice",
-            ],
-          },
-
-          {
-            condition: "Se aparecer Galvantula",
-            actions: [
-              "T2: Swift + Hyper Voice",
-            ],
-            heal: true,
-          },
-        ],
-      },
-
-      {
-        city: "Opelucid City",
-        leader: "Iris",
-        steps: [
-          {
-            title: "Lead",
-            lead: ["Typhlosion", "Vanilluxe"],
-            actions: [
-              "Eruption + Blizzard",
-            ],
-          },
-
-          {
-            condition:
-              "Se Emboar sobreviver e derrotar Vanilluxe",
-            actions: [
-              "Envie Blastoise.",
-              "Blizzard",
-            ],
-          },
-
-          {
-            condition:
-              "Se Lapras sobreviver e derrotar Typhlosion",
-            actions: [
-              "Envie Garchomp.",
-              "Earthquake",
-            ],
-          },
-
-          {
-            condition:
-              "Se Samurott sobreviver e derrotar Typhlosion",
-            actions: [
-              "Envie Togekiss.",
-              "Hyper Voice",
-            ],
-            heal: true,
-          },
-        ],
-      },
-
-      {
-        city: "Driftveil City",
-        leader: "Clay",
-        steps: [
-          {
-            title: "Lead",
-            lead: ["Blastoise", "Weezing"],
-            actions: [
-              "Water Spout + Rain Dance",
-            ],
-          },
-
-          {
-            condition: "Se aparecer Sableye",
-            actions: [
-              "T1: Water Spout + Explosion",
-              "Envie Togekiss + qualquer Pokémon disponível.",
-              "T2: Hyper Voice + Blizzard/Eruption/Earthquake",
-            ],
-          },
-
-          {
-            condition: "Se aparecer Torterra",
-            actions: [
-              "Water Spout + Assurance",
-            ],
-          },
-        ],
-      },
-
-      {
-        city: "Nacrene City",
-        leader: "Lenora",
-        requirement:
-          "Fazer apenas se houver 2:45 minutos restantes. Requer Garchomp morto e Weezing + Typhlosion vivos.",
-        steps: [
-          {
-            title: "Lead",
-            lead: ["Weezing", "Garchomp"],
-            actions: [
-              "T1: Explosion + Sunny Day",
-              "Envie Typhlosion e Togekiss.",
-              "T2: Eruption + Hyper Voice",
-            ],
-          },
-
-          {
-            condition: "Se aparecer Stantler",
-            actions: [
-              "T1: Explosion",
-              "Troque Garchomp.",
-              "Envie Typhlosion como sacrifício.",
-              "Envie Togekiss e Garchomp.",
-              "T2: Hyper Voice + Earthquake",
-            ],
-          },
-        ],
-      },
-    ],
-  },
-];
-
-/* =========================================================
-   COMPONENTS
-========================================================= */
-
-function TeamCard({
-  pokemon,
-  index,
+function sprite(name: string) {
+  const id = sprites[name];
+
+  if (!id) {
+    return null;
+  }
+
+  return `${SPRITE_BASE}/${id}.png`;
+}
+
+function PokemonSprite({
+  name,
+  size = 78,
 }: {
-  pokemon: Pokemon;
-  index: number;
+  name: string;
+  size?: number;
 }) {
+  const src = sprite(name);
+
+  if (!src) {
+    return null;
+  }
+
   return (
-    <article
-      className="
-        group overflow-hidden rounded-3xl
-        border border-white/[0.07]
-        bg-[#090d09]
-        transition-all duration-300
-        hover:-translate-y-1
-        hover:border-lime-400/20
-        hover:shadow-2xl
-        hover:shadow-lime-950/10
-      "
-    >
-      <div
-        className="
-          flex items-center justify-between
-          border-b border-white/[0.06]
-          px-5 py-4
-        "
-      >
-        <div className="flex items-center gap-3">
-          <span
-            className="
-              flex h-7 w-7 items-center justify-center
-              rounded-lg border border-white/[0.07]
-              bg-white/[0.03]
-              text-xs font-black text-gray-500
-            "
-          >
-            {index + 1}
-          </span>
-
-          <span
-            className="
-              text-xs font-bold uppercase
-              tracking-[0.15em] text-gray-600
-            "
-          >
-            Pokémon
-          </span>
-        </div>
-
-        <span
-          className="
-            h-2 w-2 rounded-full
-            bg-lime-400
-            shadow-[0_0_10px_rgba(198,255,0,0.65)]
-          "
-        />
-      </div>
-
-      <div
-        className="
-          grid grid-cols-1 gap-5 p-5
-          sm:grid-cols-[160px_1fr]
-        "
-      >
-        <div
-          className="
-            flex min-h-[160px]
-            items-center justify-center
-            rounded-2xl
-            border border-white/[0.05]
-            bg-black/30
-          "
-        >
-          <img
-            src={pokemon.sprite}
-            alt={pokemon.name}
-            width={160}
-            height={160}
-            loading="lazy"
-            className="
-              h-[160px] w-[160px]
-              object-contain
-              transition-transform duration-300
-              group-hover:scale-105
-            "
-          />
-        </div>
-
-        <div className="min-w-0">
-          <div
-            className="
-              flex flex-col gap-1
-              sm:flex-row sm:items-center sm:justify-between
-            "
-          >
-            <h3
-              className="
-                text-2xl font-black
-                tracking-tight text-white
-              "
-            >
-              {pokemon.name}
-            </h3>
-
-            <span
-              className="
-                w-fit rounded-lg
-                border border-lime-400/20
-                bg-lime-400/[0.06]
-                px-2.5 py-1
-                text-[10px] font-bold
-                uppercase tracking-wider
-                text-lime-400
-              "
-            >
-              {pokemon.item}
-            </span>
-          </div>
-
-          <div className="mt-5 space-y-2 text-sm">
-            <InfoRow
-              label="Ability"
-              value={pokemon.ability}
-            />
-
-            <InfoRow
-              label="Nature"
-              value={pokemon.nature}
-            />
-
-            <InfoRow
-              label="IVs"
-              value={pokemon.ivs}
-            />
-
-            <InfoRow
-              label="EVs"
-              value={pokemon.evs}
-            />
-          </div>
-
-          <div className="mt-5">
-            <span
-              className="
-                text-[10px] font-bold uppercase
-                tracking-[0.18em] text-gray-600
-              "
-            >
-              Moves
-            </span>
-
-            <div className="mt-2 grid grid-cols-1 gap-1 sm:grid-cols-2">
-              {pokemon.moves.map((move) => (
-                <div
-                  key={move}
-                  className="
-                    flex items-center gap-2
-                    text-sm text-gray-300
-                  "
-                >
-                  <span className="text-lime-400">
-                    –
-                  </span>
-
-                  {move}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </article>
+    <img
+      src={src}
+      alt={name}
+      width={size}
+      height={size}
+      loading="lazy"
+      className="object-contain"
+      style={{
+        width: size,
+        height: size,
+      }}
+    />
   );
 }
 
-function InfoRow({
-  label,
-  value,
+function ActionPokemon({
+  action,
 }: {
-  label: string;
-  value: string;
+  action: Action;
 }) {
   return (
-    <div className="flex flex-wrap gap-x-2">
-      <span className="text-gray-600">
-        {label}:
-      </span>
+    <div className="flex min-w-[130px] flex-col items-center">
+      <PokemonSprite
+        name={action.pokemon}
+        size={82}
+      />
 
-      <span className="font-semibold text-gray-300">
-        {value}
-      </span>
+      <div className="mt-1 text-center">
+        <div className="text-sm font-black text-white">
+          {action.pokemon}
+        </div>
+
+        <div className="mt-1 rounded-lg border border-lime-400/20 bg-lime-400/[0.06] px-3 py-1 text-xs font-bold text-lime-400">
+          {action.move}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function GymHeader({
+  gym,
+}: {
+  gym: Gym;
+}) {
+  return (
+    <div className="mb-5 overflow-hidden rounded-3xl border border-white/[0.08] bg-[#0b0e0b]">
+      <div className="flex flex-col gap-5 p-5 sm:flex-row sm:items-center sm:p-6">
+
+        {gym.map && (
+          <div className="flex h-[150px] w-full shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-lime-400/20 bg-black sm:w-[235px]">
+            <img
+              src={gym.map}
+              alt={`Mapa de ${gym.city}`}
+              className="h-full w-full object-contain"
+              loading="lazy"
+            />
+          </div>
+        )}
+
+        <div className="flex-1">
+
+          <div className="text-[10px] font-black uppercase tracking-[0.22em] text-lime-400">
+            {gym.region}
+          </div>
+
+          <h3 className="mt-2 text-2xl font-black tracking-tight text-white sm:text-3xl">
+            {gym.city}
+          </h3>
+
+          <div className="mt-3 flex items-center gap-4">
+
+            <div className="flex h-16 w-16 items-center justify-center rounded-xl border border-white/[0.07] bg-black/40">
+              <div className="text-center">
+                <span className="block text-[9px] font-bold uppercase tracking-widest text-gray-600">
+                  Líder
+                </span>
+
+                <span className="mt-1 block text-xs font-black text-gray-300">
+                  {gym.leader}
+                </span>
+              </div>
+            </div>
+
+            <div>
+              <div className="text-xs font-bold uppercase tracking-[0.16em] text-gray-600">
+                Gym Leader
+              </div>
+
+              <div className="mt-1 text-lg font-black text-white">
+                {gym.leader}
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LeadBox({
+  gym,
+}: {
+  gym: Gym;
+}) {
+  return (
+    <div className="rounded-3xl border border-lime-400/20 bg-[#0b100c] p-5 sm:p-6">
+
+      <div className="mb-5">
+
+        <div className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-600">
+          Abertura
+        </div>
+
+        <h4 className="mt-1 text-xl font-black text-white">
+          Comece com
+        </h4>
+
+      </div>
+
+      <div className="flex flex-wrap items-center justify-center gap-8">
+
+        {gym.lead.map((pokemon) => (
+          <div
+            key={pokemon.name}
+            className="flex min-w-[120px] flex-col items-center"
+          >
+            <div className="flex h-[105px] w-[105px] items-center justify-center rounded-2xl border border-white/[0.06] bg-black/30">
+              <PokemonSprite
+                name={pokemon.name}
+                size={92}
+              />
+            </div>
+
+            <div className="mt-3 text-sm font-black text-white">
+              {pokemon.name}
+            </div>
+          </div>
+        ))}
+
+      </div>
+    </div>
+  );
+}
+
+function MainActionBox({
+  actions,
+}: {
+  actions: Action[];
+}) {
+  return (
+    <div className="mt-4 rounded-3xl border border-lime-400/20 bg-[#0b100c] p-5 sm:p-6">
+
+      <div className="text-center">
+
+        <div className="text-[10px] font-black uppercase tracking-[0.2em] text-lime-400">
+          Faça isso
+        </div>
+
+        <div className="mt-2 text-lg font-black text-white">
+          Ataques
+        </div>
+
+      </div>
+
+      <div className="mt-6 flex flex-wrap items-center justify-center gap-8">
+
+        {actions.map((action, index) => (
+          <div
+            key={`${action.pokemon}-${action.move}-${index}`}
+            className="flex items-center"
+          >
+
+            <ActionPokemon action={action} />
+
+            {index < actions.length - 1 && (
+              <span className="mx-3 text-2xl font-black text-gray-700">
+                +
+              </span>
+            )}
+
+          </div>
+        ))}
+
+      </div>
+
+    </div>
+  );
+}
+
+function ConditionBox({
+  condition,
+}: {
+  condition: Condition;
+}) {
+  return (
+    <div className="mt-4 rounded-3xl border border-red-500/25 bg-red-500/[0.035] p-5 sm:p-6">
+
+      <div className="text-center">
+
+        <div className="text-[10px] font-black uppercase tracking-[0.2em] text-red-400">
+          Atenção
+        </div>
+
+        <h4 className="mt-2 text-lg font-black text-red-400">
+          {condition.title}
+        </h4>
+
+      </div>
+
+      {condition.enemy && condition.enemy.length > 0 && (
+        <div className="mt-5 flex flex-wrap justify-center gap-5">
+
+          {condition.enemy.map((enemy) => (
+            <div
+              key={enemy}
+              className="flex flex-col items-center"
+            >
+              <div className="flex h-[85px] w-[85px] items-center justify-center rounded-2xl border border-red-500/15 bg-black/30">
+                <PokemonSprite
+                  name={enemy}
+                  size={72}
+                />
+              </div>
+
+              <span className="mt-2 text-xs font-bold text-gray-400">
+                {enemy}
+              </span>
+            </div>
+          ))}
+
+        </div>
+      )}
+
+      <div className="mt-5 space-y-2">
+
+        {condition.steps.map((step, index) => (
+          <div
+            key={`${step}-${index}`}
+            className="rounded-xl border border-white/[0.05] bg-black/20 px-4 py-3 text-sm font-semibold leading-6 text-gray-300"
+          >
+            {step}
+          </div>
+        ))}
+
+      </div>
+
     </div>
   );
 }
 
 function GymCard({
   gym,
-  index,
 }: {
   gym: Gym;
-  index: number;
 }) {
-  const [open, setOpen] = useState(false);
-
   return (
-    <article
-      className={[
-        "overflow-hidden rounded-2xl border",
-        "bg-[#090d09]",
-        "transition-all duration-300",
-        open
-          ? "border-lime-400/20 shadow-xl shadow-lime-950/10"
-          : "border-white/[0.07]",
-      ].join(" ")}
-    >
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        className="
-          flex w-full items-center
-          gap-4 px-5 py-5
-          text-left
-          transition-colors
-          hover:bg-white/[0.015]
-        "
-      >
-        <span
-          className="
-            flex h-9 w-9 shrink-0
-            items-center justify-center
-            rounded-xl
-            border border-white/[0.07]
-            bg-white/[0.025]
-            text-xs font-black
-            text-gray-500
-          "
-        >
-          {String(index + 1).padStart(2, "0")}
-        </span>
+    <article className="mb-12">
 
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <h3
-              className={[
-                "text-lg font-black",
-                open
-                  ? "text-lime-400"
-                  : "text-white",
-              ].join(" ")}
-            >
-              {gym.city}
-            </h3>
+      <GymHeader gym={gym} />
 
-            {gym.optional && (
-              <span
-                className="
-                  rounded-full
-                  border border-yellow-400/20
-                  bg-yellow-400/[0.06]
-                  px-2 py-0.5
-                  text-[9px] font-bold
-                  uppercase tracking-wider
-                  text-yellow-400
-                "
-              >
-                Opcional
-              </span>
-            )}
-          </div>
+      <div className="mx-auto max-w-4xl">
 
-          <p className="mt-1 text-xs text-gray-600">
-            Gym Leader:{" "}
-            <span className="text-gray-400">
-              {gym.leader}
-            </span>
-          </p>
-        </div>
+        <LeadBox gym={gym} />
 
-        <span
-          className={[
-            "flex h-9 w-9 shrink-0",
-            "items-center justify-center",
-            "rounded-lg border border-white/[0.07]",
-            "bg-white/[0.025]",
-            "text-gray-500",
-            "transition-transform duration-300",
-            open ? "rotate-180 text-lime-400" : "",
-          ].join(" ")}
-        >
-          ↓
-        </span>
-      </button>
+        <MainActionBox
+          actions={gym.mainActions}
+        />
 
-      <div
-        className={[
-          "grid transition-[grid-template-rows,opacity]",
-          "duration-300",
-          open
-            ? "grid-rows-[1fr] opacity-100"
-            : "grid-rows-[0fr] opacity-0",
-        ].join(" ")}
-      >
-        <div className="min-h-0 overflow-hidden">
-          <div
-            className="
-              border-t border-white/[0.06]
-              p-5
-            "
-          >
-            {gym.requirement && (
-              <div
-                className="
-                  mb-5 rounded-xl
-                  border border-yellow-400/15
-                  bg-yellow-400/[0.04]
-                  p-4
-                "
-              >
-                <span
-                  className="
-                    text-[10px] font-bold
-                    uppercase tracking-[0.18em]
-                    text-yellow-400
-                  "
-                >
-                  Requisito
-                </span>
+        {gym.switches &&
+          gym.switches.length > 0 && (
+            <div className="mt-4 rounded-3xl border border-yellow-400/20 bg-yellow-400/[0.035] p-5 sm:p-6">
 
-                <p className="mt-2 text-sm leading-6 text-gray-400">
-                  {gym.requirement}
-                </p>
-              </div>
-            )}
+              <div className="text-center">
 
-            <div className="space-y-4">
-              {gym.steps.map((step, stepIndex) => (
-                <div
-                  key={stepIndex}
-                  className="
-                    rounded-xl
-                    border border-white/[0.06]
-                    bg-black/20
-                    p-4
-                  "
-                >
-                  {step.title && (
-                    <p
-                      className="
-                        text-xs font-black
-                        uppercase tracking-[0.16em]
-                        text-lime-400
-                      "
-                    >
-                      {step.title}
-                    </p>
-                  )}
-
-                  {step.condition && (
-                    <div
-                      className="
-                        flex items-start gap-2
-                        text-sm font-bold
-                        text-white
-                      "
-                    >
-                      <span className="text-lime-400">
-                        →
-                      </span>
-
-                      <span>
-                        {step.condition}
-                      </span>
-                    </div>
-                  )}
-
-                  {step.lead && (
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {step.lead.map((pokemon) => (
-                        <span
-                          key={pokemon}
-                          className="
-                            rounded-lg
-                            border border-lime-400/15
-                            bg-lime-400/[0.06]
-                            px-3 py-1.5
-                            text-xs font-bold
-                            text-lime-400
-                          "
-                        >
-                          {pokemon}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-
-                  {step.actions && (
-                    <div className="mt-3 space-y-2">
-                      {step.actions.map(
-                        (action, actionIndex) => (
-                          <div
-                            key={actionIndex}
-                            className="
-                              flex items-start gap-2
-                              text-sm leading-6
-                              text-gray-300
-                            "
-                          >
-                            <span className="mt-1 text-lime-400">
-                              •
-                            </span>
-
-                            <span>
-                              {action}
-                            </span>
-                          </div>
-                        )
-                      )}
-                    </div>
-                  )}
-
-                  {step.text && (
-                    <p className="text-sm leading-6 text-gray-400">
-                      {step.text}
-                    </p>
-                  )}
-
-                  {step.note && (
-                    <div
-                      className="
-                        mt-4
-                        border-t border-white/[0.05]
-                        pt-3
-                        text-xs leading-5
-                        text-gray-500
-                      "
-                    >
-                      <span className="font-bold text-gray-400">
-                        Nota:
-                      </span>{" "}
-                      {step.note}
-                    </div>
-                  )}
-
-                  {step.heal && (
-                    <div
-                      className="
-                        mt-4 flex items-center gap-2
-                        rounded-lg
-                        border border-lime-400/15
-                        bg-lime-400/[0.05]
-                        px-3 py-2
-                      "
-                    >
-                      <span
-                        className="
-                          h-2 w-2 rounded-full
-                          bg-lime-400
-                          shadow-[0_0_8px_rgba(198,255,0,0.6)]
-                        "
-                      />
-
-                      <span
-                        className="
-                          text-[10px]
-                          font-black uppercase
-                          tracking-[0.16em]
-                          text-lime-400
-                        "
-                      >
-                        HEAL
-                      </span>
-                    </div>
-                  )}
+                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-yellow-400">
+                  Troca
                 </div>
-              ))}
+
+              </div>
+
+              <div className="mt-4 space-y-2">
+
+                {gym.switches.map(
+                  (text, index) => (
+                    <div
+                      key={`${text}-${index}`}
+                      className="rounded-xl border border-white/[0.05] bg-black/20 px-4 py-3 text-sm font-semibold leading-6 text-gray-300"
+                    >
+                      {text}
+                    </div>
+                  )
+                )}
+
+              </div>
+
             </div>
+          )}
+
+        {gym.conditions?.map(
+          (condition, index) => (
+            <ConditionBox
+              key={`${condition.title}-${index}`}
+              condition={condition}
+            />
+          )
+        )}
+
+        {gym.healAfter && (
+          <div className="mt-4 rounded-2xl border border-lime-400/25 bg-lime-400/[0.05] px-5 py-4 text-center">
+
+            <span className="text-sm font-black uppercase tracking-[0.16em] text-lime-400">
+              HEAL
+            </span>
+
           </div>
-        </div>
+        )}
+
       </div>
     </article>
   );
 }
 
-/* =========================================================
-   PAGE
-========================================================= */
+/*
+ * ============================================================
+ * MAPAS
+ * ============================================================
+ *
+ * Caso você já tenha as imagens dos mapas no /public,
+ * substitua estas URLs por:
+ *
+ * /images/gym-run/hoenn/lavaridge.png
+ *
+ * etc.
+ *
+ * A página continua funcionando mesmo sem mapa.
+ */
+
+const MAP_HOENN =
+  "https://crescentschaos.github.io/pokemmo-resources/tools/gymrerun/";
+
+const gyms: Gym[] = [
+
+  // ==========================================================
+  // HOENN
+  // ==========================================================
+
+  {
+    region: "HOENN",
+    city: "Lavaridge Town",
+    leader: "Flannery",
+
+    lead: [
+      { name: "Blastoise", id: 9 },
+      { name: "Togekiss", id: 468 },
+    ],
+
+    mainActions: [
+      {
+        pokemon: "Blastoise",
+        move: "Water Spout",
+      },
+      {
+        pokemon: "Togekiss",
+        move: "Helping Hand",
+      },
+    ],
+
+    conditions: [
+      {
+        title: "Se aparecer Houndoom / Lv.85 Arcanine",
+        enemy: ["Houndoom", "Arcanine"],
+        steps: [
+          "Water Spout + Hyper Voice",
+          "Baixa chance de terminar em 4 turnos.",
+          "Cure se o Blastoise estiver danificado.",
+        ],
+      },
+    ],
+  },
+
+  {
+    region: "HOENN",
+    city: "Dewford Town",
+    leader: "Brawly",
+
+    lead: [
+      { name: "Blastoise", id: 9 },
+      { name: "Vanilluxe", id: 584 },
+    ],
+
+    mainActions: [
+      {
+        pokemon: "Blastoise",
+        move: "Water Spout",
+      },
+      {
+        pokemon: "Vanilluxe",
+        move: "Blizzard",
+      },
+    ],
+
+    conditions: [
+      {
+        title: "Se Vanilluxe cair",
+        steps: [
+          "Cure antes de continuar.",
+        ],
+      },
+    ],
+  },
+
+  {
+    region: "HOENN",
+    city: "Fortree City",
+    leader: "Winona",
+
+    lead: [
+      { name: "Blastoise", id: 9 },
+      { name: "Weezing", id: 110 },
+    ],
+
+    mainActions: [
+      {
+        pokemon: "Blastoise",
+        move: "Water Spout",
+      },
+      {
+        pokemon: "Weezing",
+        move: "Explosion",
+      },
+    ],
+
+    switches: [
+      "Depois da Explosion, envie Typhlosion + Togekiss.",
+    ],
+
+    conditions: [
+      {
+        title: "Resultado normal",
+        steps: [
+          "Typhlosion: Eruption",
+          "Togekiss: Hyper Voice",
+        ],
+      },
+
+      {
+        title: "Se aparecer Swellow",
+        enemy: ["Swellow"],
+        steps: [
+          "T1: Fake Out em Swellow + Explosion.",
+          "Depois envie Vanilluxe + Togekiss.",
+          "T2: Blizzard + Hyper Voice.",
+        ],
+      },
+    ],
+  },
+
+  {
+    region: "HOENN",
+    city: "Mauville City",
+    leader: "Wattson",
+
+    lead: [
+      { name: "Typhlosion", id: 157 },
+      { name: "Garchomp", id: 445 },
+    ],
+
+    mainActions: [
+      {
+        pokemon: "Typhlosion",
+        move: "Eruption",
+      },
+      {
+        pokemon: "Garchomp",
+        move: "Dragon Claw",
+      },
+    ],
+
+    conditions: [
+      {
+        title: "Se aparecer Zebstrika com Air Balloon",
+        enemy: ["Zebstrika"],
+        steps: [
+          "Troque Garchomp.",
+          "Envie Togekiss.",
+          "Typhlosion: Eruption.",
+          "Togekiss: Hyper Voice.",
+        ],
+      },
+    ],
+
+    healAfter: true,
+  },
+
+  {
+    region: "HOENN",
+    city: "Rustboro City",
+    leader: "Roxanne",
+
+    lead: [
+      { name: "Blastoise", id: 9 },
+      { name: "Weezing", id: 110 },
+    ],
+
+    mainActions: [
+      {
+        pokemon: "Blastoise",
+        move: "Water Spout",
+      },
+      {
+        pokemon: "Weezing",
+        move: "Assurance",
+      },
+    ],
+  },
+
+  // ==========================================================
+  // KANTO
+  // ==========================================================
+
+  {
+    region: "KANTO",
+    city: "Vermilion City",
+    leader: "Lt. Surge",
+
+    lead: [
+      { name: "Typhlosion", id: 157 },
+      { name: "Garchomp", id: 445 },
+    ],
+
+    mainActions: [
+      {
+        pokemon: "Typhlosion",
+        move: "Eruption",
+      },
+      {
+        pokemon: "Garchomp",
+        move: "Dragon Claw",
+      },
+    ],
+
+    conditions: [
+      {
+        title: "Se aparecer Politoed",
+        enemy: ["Politoed"],
+        steps: [
+          "T1: Swift + Earthquake.",
+          "Envie Vanilluxe.",
+          "T2: Blizzard + Earthquake.",
+          "Se Vanilluxe morrer para Earthquake crítico, envie Togekiss.",
+          "Togekiss: Hyper Voice.",
+          "Cure Typhlosion e Vanilluxe.",
+        ],
+      },
+    ],
+  },
+
+  {
+    region: "KANTO",
+    city: "Cinnabar Island",
+    leader: "Blaine",
+
+    lead: [
+      { name: "Blastoise", id: 9 },
+      { name: "Weezing", id: 110 },
+    ],
+
+    mainActions: [
+      {
+        pokemon: "Blastoise",
+        move: "Water Spout",
+      },
+    ],
+
+    conditions: [
+      {
+        title: "Se aparecer Arcanine / Charizard / Typhlosion",
+        enemy: ["Arcanine"],
+        steps: [
+          "T1: Water Spout.",
+          "Troque Weezing.",
+          "Envie Vanilluxe.",
+          "T2: Water Spout + Blizzard.",
+        ],
+      },
+
+      {
+        title: "Se aparecer Flareon",
+        enemy: ["Flareon"],
+        steps: [
+          "Water Spout + Rain Dance.",
+        ],
+      },
+
+      {
+        title: "Se aparecer Moltres com Blissey",
+        enemy: ["Moltres", "Blissey"],
+        steps: [
+          "Water Spout + Assurance.",
+          "Dê prioridade ao Assurance em Blissey.",
+        ],
+      },
+    ],
+  },
+
+  {
+    region: "KANTO",
+    city: "Celadon City",
+    leader: "Erika",
+
+    lead: [
+      { name: "Blastoise", id: 9 },
+      { name: "Weezing", id: 110 },
+    ],
+
+    mainActions: [
+      {
+        pokemon: "Blastoise",
+        move: "Water Spout",
+      },
+      {
+        pokemon: "Weezing",
+        move: "Explosion",
+      },
+    ],
+
+    switches: [
+      "Depois da Explosion, envie Typhlosion + Togekiss.",
+      "Typhlosion: Eruption.",
+      "Togekiss: Hyper Voice.",
+    ],
+
+    conditions: [
+      {
+        title: "Se Victreebel estiver no início",
+        enemy: ["Victreebel"],
+        steps: [
+          "Envie Typhlosion + Garchomp.",
+          "T2: Eruption + Dragon Claw.",
+        ],
+      },
+    ],
+  },
+
+  {
+    region: "KANTO",
+    city: "Saffron City",
+    leader: "Sabrina",
+
+    lead: [
+      { name: "Typhlosion", id: 157 },
+      { name: "Garchomp", id: 445 },
+    ],
+
+    mainActions: [
+      {
+        pokemon: "Typhlosion",
+        move: "Eruption",
+      },
+      {
+        pokemon: "Garchomp",
+        move: "Dragon Claw",
+      },
+    ],
+
+    switches: [
+      "Puzzle: Left → Down → Left → Left.",
+    ],
+
+    conditions: [
+      {
+        title: "Se aparecer Espeon / Wobbuffet",
+        enemy: ["Espeon", "Wobbuffet"],
+        steps: [
+          "T1: Eruption + Earthquake.",
+          "Envie Togekiss.",
+          "T2: Hyper Voice + Earthquake.",
+        ],
+      },
+    ],
+
+    healAfter: true,
+  },
+
+  {
+    region: "KANTO",
+    city: "Pewter City",
+    leader: "Brock",
+
+    lead: [
+      { name: "Blastoise", id: 9 },
+      { name: "Weezing", id: 110 },
+    ],
+
+    mainActions: [
+      {
+        pokemon: "Blastoise",
+        move: "Water Spout",
+      },
+      {
+        pokemon: "Weezing",
+        move: "Assurance",
+      },
+    ],
+
+    conditions: [
+      {
+        title: "Se Golem / Toxicroak",
+        enemy: ["Golem", "Toxicroak"],
+        steps: [
+          "Water Spout + Assurance.",
+        ],
+      },
+
+      {
+        title: "Se Ludicolo / Aerodactyl",
+        enemy: ["Ludicolo", "Aerodactyl"],
+        steps: [
+          "T1: Water Spout + Explosion.",
+          "Envie Togekiss + Garchomp.",
+          "T2: Hyper Voice + Earthquake.",
+        ],
+      },
+
+      {
+        title: "Se Swampert",
+        enemy: ["Swampert"],
+        steps: [
+          "T1: Water Spout + Explosion.",
+          "Envie Typhlosion + Togekiss.",
+          "T2: Eruption + Hyper Voice.",
+          "Cure se necessário.",
+        ],
+      },
+    ],
+  },
+
+  // ==========================================================
+  // SINNOH
+  // ==========================================================
+
+  {
+    region: "SINNOH",
+    city: "Eterna City",
+    leader: "Gardenia",
+
+    lead: [
+      { name: "Typhlosion", id: 157 },
+      { name: "Togekiss", id: 468 },
+    ],
+
+    mainActions: [
+      {
+        pokemon: "Typhlosion",
+        move: "Swift",
+      },
+      {
+        pokemon: "Togekiss",
+        move: "Hyper Voice",
+      },
+    ],
+
+    conditions: [
+      {
+        title: "Se aparecer Ninetales",
+        enemy: ["Ninetales"],
+        steps: [
+          "T1: Incinerate + Hyper Voice.",
+          "T2: Incinerate.",
+          "Troque Togekiss.",
+          "Envie Weezing.",
+          "T3: Incinerate + Assurance.",
+          "Pode precisar curar Typhlosion.",
+        ],
+      },
+
+      {
+        title: "Se aparecer Whimsicott",
+        enemy: ["Whimsicott"],
+        steps: [
+          "T1: Eruption.",
+          "Troque Togekiss.",
+          "Envie Weezing.",
+          "T2: Eruption + Incinerate.",
+        ],
+      },
+
+      {
+        title: "Se aparecer Roserade",
+        enemy: ["Roserade"],
+        steps: [
+          "Eruption + Hyper Voice.",
+        ],
+      },
+    ],
+  },
+
+  {
+    region: "SINNOH",
+    city: "Veilstone City",
+    leader: "Maylene",
+
+    lead: [
+      { name: "Typhlosion", id: 157 },
+      { name: "Togekiss", id: 468 },
+    ],
+
+    mainActions: [
+      {
+        pokemon: "Typhlosion",
+        move: "Eruption",
+      },
+      {
+        pokemon: "Togekiss",
+        move: "Helping Hand",
+      },
+    ],
+
+    conditions: [
+      {
+        title: "Se aparecer Infernape",
+        enemy: ["Infernape"],
+        steps: [
+          "T1: Eruption + Hyper Voice.",
+        ],
+      },
+
+      {
+        title: "Se aparecer Mienshao",
+        enemy: ["Mienshao"],
+        steps: [
+          "T1: Incinerate + Hyper Voice.",
+          "Pode precisar curar se Typhlosion estiver danificado.",
+        ],
+      },
+    ],
+  },
+
+  {
+    region: "SINNOH",
+    city: "Oreburgh City",
+    leader: "Roark",
+
+    lead: [
+      { name: "Blastoise", id: 9 },
+      { name: "Weezing", id: 110 },
+    ],
+
+    mainActions: [
+      {
+        pokemon: "Blastoise",
+        move: "Water Spout",
+      },
+      {
+        pokemon: "Weezing",
+        move: "Assurance",
+      },
+    ],
+
+    conditions: [
+      {
+        title: "Se aparecer Probopass",
+        enemy: ["Probopass"],
+        steps: [
+          "T1: Water Spout.",
+          "Troque Weezing.",
+          "Envie Vanilluxe.",
+          "T2: Water Spout + Blizzard.",
+        ],
+      },
+
+      {
+        title: "Se aparecer Tyranitar + Excadrill",
+        enemy: ["Tyranitar", "Excadrill"],
+        steps: [
+          "T1: Water Spout + Assurance.",
+          "Dê prioridade ao Assurance em Cradily quando necessário.",
+        ],
+      },
+
+      {
+        title: "Se Cradily + Slowbro aparecerem juntos no T2",
+        enemy: ["Cradily", "Slowbro"],
+        steps: [
+          "Se Weezing morrer para Psychic crítico, envie Vanilluxe.",
+          "Water Spout + Blizzard.",
+        ],
+      },
+    ],
+  },
+
+  {
+    region: "SINNOH",
+    city: "Pastoria City",
+    leader: "Crasher Wake",
+
+    lead: [
+      { name: "Blastoise", id: 9 },
+      { name: "Weezing", id: 110 },
+    ],
+
+    mainActions: [
+      {
+        pokemon: "Blastoise",
+        move: "Fake Out",
+      },
+      {
+        pokemon: "Weezing",
+        move: "Explosion",
+      },
+    ],
+
+    switches: [
+      "Fake Out deve ser usado em Sharpedo.",
+      "Depois envie Togekiss + Garchomp.",
+      "T2: Hyper Voice + Earthquake.",
+    ],
+
+    conditions: [
+      {
+        title: "Atenção ao Garchomp",
+        steps: [
+          "Pode precisar curar se Garchomp estiver danificado.",
+        ],
+      },
+    ],
+  },
+
+  // ==========================================================
+  // JOHTO
+  // ==========================================================
+
+  {
+    region: "JOHTO",
+    city: "Cianwood City",
+    leader: "Chuck",
+
+    lead: [
+      { name: "Togekiss", id: 468 },
+      { name: "Garchomp", id: 445 },
+    ],
+
+    mainActions: [
+      {
+        pokemon: "Togekiss",
+        move: "Hyper Voice",
+      },
+      {
+        pokemon: "Garchomp",
+        move: "Earthquake",
+      },
+    ],
+  },
+
+  {
+    region: "JOHTO",
+    city: "Goldenrod City",
+    leader: "Whitney",
+
+    lead: [
+      { name: "Garchomp", id: 445 },
+      { name: "Togekiss", id: 468 },
+    ],
+
+    mainActions: [
+      {
+        pokemon: "Garchomp",
+        move: "Earthquake",
+      },
+      {
+        pokemon: "Togekiss",
+        move: "Hyper Voice",
+      },
+    ],
+
+    conditions: [
+      {
+        title: "Se Garchomp morrer",
+        steps: [
+          "Envie Typhlosion.",
+        ],
+      },
+    ],
+
+    healAfter: true,
+  },
+
+  {
+    region: "JOHTO",
+    city: "Olivine City",
+    leader: "Jasmine",
+
+    lead: [
+      { name: "Typhlosion", id: 157 },
+      { name: "Weezing", id: 110 },
+    ],
+
+    mainActions: [
+      {
+        pokemon: "Typhlosion",
+        move: "Eruption",
+      },
+      {
+        pokemon: "Weezing",
+        move: "Assurance",
+      },
+    ],
+
+    conditions: [
+      {
+        title: "Se aparecer Metagross",
+        enemy: ["Metagross"],
+        steps: [
+          "T1: Eruption + Explosion.",
+          "Envie Togekiss + Garchomp.",
+          "T2: Hyper Voice + Earthquake.",
+        ],
+      },
+    ],
+  },
+
+  {
+    region: "JOHTO",
+    city: "Violet City",
+    leader: "Falkner",
+
+    lead: [
+      { name: "Blastoise", id: 9 },
+      { name: "Vanilluxe", id: 584 },
+    ],
+
+    mainActions: [
+      {
+        pokemon: "Blastoise",
+        move: "Water Spout",
+      },
+      {
+        pokemon: "Vanilluxe",
+        move: "Blizzard",
+      },
+    ],
+
+    conditions: [
+      {
+        title: "Se aparecer Zapdos / Pelipper",
+        enemy: ["Zapdos", "Pelipper"],
+        steps: [
+          "Water Spout + Hyper Voice.",
+        ],
+      },
+    ],
+  },
+
+  {
+    region: "JOHTO",
+    city: "Blackthorn City",
+    leader: "Clair",
+
+    lead: [
+      { name: "Blastoise", id: 9 },
+      { name: "Weezing", id: 110 },
+    ],
+
+    mainActions: [
+      {
+        pokemon: "Blastoise",
+        move: "Water Spout",
+      },
+      {
+        pokemon: "Weezing",
+        move: "Explosion",
+      },
+    ],
+
+    switches: [
+      "Depois da Explosion, envie Togekiss + Vanilluxe.",
+      "T2: Hyper Voice + Blizzard.",
+    ],
+
+    conditions: [
+      {
+        title: "Se aparecer Blastoise",
+        enemy: ["Blastoise"],
+        steps: [
+          "T1: Fake Out em Blastoise + Explosion.",
+        ],
+      },
+    ],
+
+    healAfter: true,
+  },
+
+  {
+    region: "JOHTO",
+    city: "Mahogany Town",
+    leader: "Pryce",
+
+    lead: [
+      { name: "Weezing", id: 110 },
+      { name: "Garchomp", id: 445 },
+    ],
+
+    mainActions: [
+      {
+        pokemon: "Weezing",
+        move: "Explosion",
+      },
+      {
+        pokemon: "Garchomp",
+        move: "Dragon Claw",
+      },
+    ],
+
+    conditions: [
+      {
+        title: "Se Articuno / Walrein",
+        enemy: ["Articuno", "Walrein"],
+        steps: [
+          "T1: Explosion + Dragon Claw.",
+          "Envie Typhlosion + Togekiss.",
+          "T2: Eruption + Hyper Voice.",
+        ],
+      },
+
+      {
+        title: "Se Froslass",
+        enemy: ["Froslass"],
+        steps: [
+          "T1: Explosion + Sunny Day.",
+          "Envie Typhlosion + Blastoise.",
+          "T2: Eruption + Water Spout.",
+          "Restaure o PP de Eruption do Typhlosion depois.",
+        ],
+      },
+
+      {
+        title: "Se Glalie",
+        enemy: ["Glalie"],
+        steps: [
+          "T1: Explosion.",
+          "Troque para Blastoise para servir de sacrifício.",
+          "Envie Typhlosion + Garchomp.",
+          "T2: Eruption + Earthquake.",
+          "Envie Togekiss.",
+          "T3: Hyper Voice + Earthquake.",
+        ],
+      },
+
+      {
+        title: "Se Mamoswine",
+        enemy: ["Mamoswine"],
+        steps: [
+          "T1: Explosion + Dragon Claw em Mamoswine.",
+          "Envie Blastoise + Typhlosion.",
+          "T2: Water Spout + Eruption.",
+        ],
+      },
+    ],
+  },
+
+  // ==========================================================
+  // UNOVA
+  // ==========================================================
+
+  {
+    region: "UNOVA",
+    city: "Castelia City",
+    leader: "Burgh",
+
+    lead: [
+      { name: "Blastoise", id: 9 },
+      { name: "Vanilluxe", id: 584 },
+    ],
+
+    mainActions: [
+      {
+        pokemon: "Blastoise",
+        move: "Water Spout",
+      },
+      {
+        pokemon: "Vanilluxe",
+        move: "Blizzard",
+      },
+    ],
+  },
+
+  {
+    region: "UNOVA",
+    city: "Striaton City",
+    leader: "Chili / Cilan / Cress",
+
+    lead: [
+      { name: "Typhlosion", id: 157 },
+      { name: "Togekiss", id: 468 },
+    ],
+
+    mainActions: [
+      {
+        pokemon: "Typhlosion",
+        move: "Eruption",
+      },
+      {
+        pokemon: "Togekiss",
+        move: "Hyper Voice",
+      },
+    ],
+
+    conditions: [
+      {
+        title: "Chili",
+        steps: [
+          "Lead: Garchomp + Togekiss.",
+          "Earthquake + Hyper Voice.",
+        ],
+      },
+
+      {
+        title: "Chili — Ninetales / Stoutland",
+        enemy: ["Ninetales"],
+        steps: [
+          "Helping Hand + Hyper Voice.",
+        ],
+      },
+
+      {
+        title: "Cilan",
+        enemy: ["Leavanny"],
+        steps: [
+          "Incinerate + Hyper Voice.",
+          "Se Leavanny: Eruption + Hyper Voice.",
+        ],
+      },
+
+      {
+        title: "Cress",
+        enemy: ["Floatzel"],
+        steps: [
+          "Eruption + Hyper Voice.",
+          "Se Floatzel: troque Typhlosion.",
+          "Envie Vanilluxe.",
+          "Hyper Voice + Hyper Voice.",
+        ],
+      },
+    ],
+  },
+
+  {
+    region: "UNOVA",
+    city: "Mistralton City",
+    leader: "Skyla",
+
+    lead: [
+      { name: "Blastoise", id: 9 },
+      { name: "Vanilluxe", id: 584 },
+    ],
+
+    mainActions: [
+      {
+        pokemon: "Blastoise",
+        move: "Water Spout",
+      },
+      {
+        pokemon: "Vanilluxe",
+        move: "Blizzard",
+      },
+    ],
+
+    conditions: [
+      {
+        title: "Braviary / Mandibuzz",
+        enemy: ["Braviary", "Mandibuzz"],
+        steps: [
+          "Water Spout + Blizzard.",
+        ],
+      },
+
+      {
+        title: "Swanna / Whimsicott",
+        enemy: ["Swanna", "Whimsicott"],
+        steps: [
+          "Blizzard + Blizzard.",
+        ],
+      },
+
+      {
+        title: "Unfezant",
+        enemy: ["Unfezant"],
+        steps: [
+          "T1: Blizzard.",
+          "Troque Blastoise.",
+          "Envie Weezing.",
+          "T2: Assurance + Blizzard.",
+        ],
+      },
+    ],
+  },
+
+  {
+    region: "UNOVA",
+    city: "Nimbasa City",
+    leader: "Elesa",
+
+    lead: [
+      { name: "Blastoise", id: 9 },
+      { name: "Weezing", id: 110 },
+    ],
+
+    mainActions: [
+      {
+        pokemon: "Blastoise",
+        move: "Water Spout",
+      },
+      {
+        pokemon: "Weezing",
+        move: "Explosion",
+      },
+    ],
+
+    conditions: [
+      {
+        title: "Se Galvantula",
+        enemy: ["Galvantula"],
+        steps: [
+          "Fake Out em Emolga ou Galvantula quando necessário.",
+          "T2: Swift + Hyper Voice.",
+        ],
+      },
+    ],
+
+    switches: [
+      "Depois da Explosion, envie Typhlosion + Togekiss.",
+      "T2: Eruption + Hyper Voice.",
+    ],
+
+    healAfter: true,
+  },
+
+  {
+    region: "UNOVA",
+    city: "Opelucid City",
+    leader: "Iris",
+
+    lead: [
+      { name: "Typhlosion", id: 157 },
+      { name: "Vanilluxe", id: 584 },
+    ],
+
+    mainActions: [
+      {
+        pokemon: "Typhlosion",
+        move: "Eruption",
+      },
+      {
+        pokemon: "Vanilluxe",
+        move: "Blizzard",
+      },
+    ],
+
+    conditions: [
+      {
+        title: "Emboar sobrevive e derrota Vanilluxe",
+        enemy: ["Emboar"],
+        steps: [
+          "Envie Blastoise.",
+          "Blizzard.",
+        ],
+      },
+
+      {
+        title: "Lapras sobrevive e derrota Typhlosion",
+        enemy: ["Lapras"],
+        steps: [
+          "Envie Garchomp.",
+          "Earthquake.",
+        ],
+      },
+
+      {
+        title: "Samurott sobrevive e derrota Typhlosion",
+        enemy: ["Samurott"],
+        steps: [
+          "Envie Togekiss.",
+          "Hyper Voice.",
+        ],
+      },
+    ],
+
+    healAfter: true,
+  },
+
+  {
+    region: "UNOVA",
+    city: "Driftveil City",
+    leader: "Clay",
+
+    lead: [
+      { name: "Blastoise", id: 9 },
+      { name: "Weezing", id: 110 },
+    ],
+
+    mainActions: [
+      {
+        pokemon: "Blastoise",
+        move: "Water Spout",
+      },
+      {
+        pokemon: "Weezing",
+        move: "Rain Dance",
+      },
+    ],
+
+    conditions: [
+      {
+        title: "Se Sableye",
+        enemy: ["Sableye"],
+        steps: [
+          "T1: Water Spout + Explosion.",
+          "Envie Togekiss + outro Pokémon disponível.",
+          "T2: Hyper Voice + Blizzard / Eruption / Earthquake.",
+        ],
+      },
+
+      {
+        title: "Se Torterra",
+        enemy: ["Torterra"],
+        steps: [
+          "Water Spout + Assurance.",
+        ],
+      },
+    ],
+  },
+
+  {
+    region: "UNOVA",
+    city: "Nacrene City",
+    leader: "Lenora",
+
+    lead: [
+      { name: "Weezing", id: 110 },
+      { name: "Garchomp", id: 445 },
+    ],
+
+    mainActions: [
+      {
+        pokemon: "Weezing",
+        move: "Explosion",
+      },
+      {
+        pokemon: "Garchomp",
+        move: "Sunny Day",
+      },
+    ],
+
+    switches: [
+      "Depois da Explosion + Sunny Day, envie Typhlosion + Togekiss.",
+      "T2: Eruption + Hyper Voice.",
+    ],
+
+    conditions: [
+      {
+        title: "Se Stantler",
+        enemy: ["Stantler"],
+        steps: [
+          "T1: Explosion.",
+          "Troque Garchomp.",
+          "Envie Typhlosion como sacrifício.",
+          "Depois envie Togekiss + Garchomp.",
+          "T2: Hyper Voice + Earthquake.",
+        ],
+      },
+
+      {
+        title: "Requisito",
+        steps: [
+          "Use esta rota somente se houver aproximadamente 2:45 restantes.",
+          "Garchomp precisa morrer.",
+          "Weezing e Typhlosion precisam estar vivos.",
+        ],
+      },
+    ],
+  },
+];
+
+function RegionHeader({
+  region,
+}: {
+  region: string;
+}) {
+  return (
+    <div className="mb-8 mt-16 first:mt-0">
+
+      <div className="flex items-center gap-4">
+
+        <div className="h-px flex-1 bg-white/[0.07]" />
+
+        <div className="rounded-full border border-lime-400/20 bg-lime-400/[0.05] px-5 py-2">
+
+          <span className="text-xs font-black uppercase tracking-[0.25em] text-lime-400">
+            {region}
+          </span>
+
+        </div>
+
+        <div className="h-px flex-1 bg-white/[0.07]" />
+
+      </div>
+
+    </div>
+  );
+}
 
 export default function GymRunPage() {
-  const [activeRegion, setActiveRegion] =
-    useState("Hoenn");
-
-  const region =
-    regions.find(
-      (item) => item.name === activeRegion
-    ) ?? regions[0];
+  let currentRegion = "";
 
   return (
     <main className="min-h-screen bg-[#050605] text-white">
 
       {/* =====================================================
-          HERO
+          HEADER
       ===================================================== */}
 
-      <section className="relative overflow-hidden border-b border-white/[0.06]">
-        <div
-          className="
-            pointer-events-none absolute inset-0
-            bg-[radial-gradient(circle_at_20%_0%,rgba(198,255,0,0.10),transparent_42%)]
-          "
-        />
+      <header className="border-b border-white/[0.06] bg-[#070907]">
 
-        <div
-          className="
-            relative mx-auto max-w-7xl
-            px-5 pb-12 pt-10
-            sm:px-6 md:pb-14 md:pt-12
-          "
-        >
+        <div className="mx-auto max-w-7xl px-5 py-8 sm:px-6">
+
           <Link
             href="/farm"
-            className="
-              inline-flex items-center gap-2
-              text-sm font-semibold
-              text-gray-500
-              transition-colors
-              hover:text-lime-400
-            "
+            className="text-sm font-bold text-gray-600 transition-colors hover:text-lime-400"
           >
-            ← Voltar para Farm
+            ← Voltar para Farms
           </Link>
 
-          <div className="mt-8 max-w-4xl">
-            <div
-              className="
-                inline-flex items-center gap-2
-                rounded-full
-                border border-lime-400/20
-                bg-lime-400/[0.07]
-                px-3 py-1.5
-                text-xs font-bold
-                uppercase tracking-[0.18em]
-                text-lime-400
-              "
-            >
-              PokeMMO • Farm • Gym Run
+          <div className="mt-8 max-w-3xl">
+
+            <div className="text-[10px] font-black uppercase tracking-[0.25em] text-lime-400">
+              PokeMMO • Gym Run
             </div>
 
-            <h1
-              className="
-                mt-5 text-4xl font-black
-                tracking-tight
-                md:text-6xl
-              "
-            >
-              6 Pillar Gym Run
+            <h1 className="mt-3 text-4xl font-black tracking-tight text-white sm:text-5xl">
+              6 Pillars Gym Rerun
             </h1>
 
-            <p
-              className="
-                mt-4 max-w-3xl
-                text-base leading-7
-                text-gray-400
-                md:text-lg
-              "
-            >
-              Estratégia completa de{" "}
-              <strong className="text-white">
-                6 Pillar Normal
-              </strong>{" "}
-              para realizar Gym Runs no PokeMMO.
+            <p className="mt-4 text-sm leading-6 text-gray-500 sm:text-base">
+              Rota contínua. Comece no topo e apenas role para baixo.
+              Não é necessário trocar de página durante a run.
             </p>
 
-            <div className="mt-6 flex flex-wrap gap-2">
-              <span
-                className="
-                  rounded-xl
-                  border border-white/[0.07]
-                  bg-white/[0.025]
-                  px-3 py-2
-                  text-xs font-bold
-                  text-gray-400
-                "
-              >
-                6 Pokémon
-              </span>
-
-              <span
-                className="
-                  rounded-xl
-                  border border-white/[0.07]
-                  bg-white/[0.025]
-                  px-3 py-2
-                  text-xs font-bold
-                  text-gray-400
-                "
-              >
-                5 regiões
-              </span>
-
-              <span
-                className="
-                  rounded-xl
-                  border border-lime-400/20
-                  bg-lime-400/[0.06]
-                  px-3 py-2
-                  text-xs font-bold
-                  text-lime-400
-                "
-              >
-                Estratégia do time
-              </span>
-            </div>
           </div>
-        </div>
-      </section>
 
-      {/* =====================================================
-          REQUIREMENTS
-      ===================================================== */}
+          {/* REQUIREMENTS */}
 
-      <section className="border-b border-white/[0.06] bg-[#080c08]">
-        <div className="mx-auto max-w-7xl px-5 py-7 sm:px-6">
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-            <div
-              className="
-                rounded-2xl
-                border border-white/[0.07]
-                bg-[#0b100c]
-                p-5
-              "
-            >
-              <span
-                className="
-                  text-[10px] font-bold uppercase
-                  tracking-[0.18em]
-                  text-gray-600
-                "
-              >
+          <div className="mt-7 flex flex-wrap gap-3">
+
+            <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] px-4 py-3">
+
+              <span className="block text-[9px] font-black uppercase tracking-[0.18em] text-gray-600">
+                Pokémon
+              </span>
+
+              <strong className="mt-1 block text-sm text-white">
+                6 Gym Run Pokémon
+              </strong>
+
+            </div>
+
+            <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] px-4 py-3">
+
+              <span className="block text-[9px] font-black uppercase tracking-[0.18em] text-gray-600">
                 Requisito
               </span>
 
-              <strong className="mt-2 block text-lg font-black">
-                6 Gym Run Pokémon
+              <strong className="mt-1 block text-sm text-white">
+                5 regiões finalizadas
               </strong>
+
             </div>
 
-            <div
-              className="
-                rounded-2xl
-                border border-white/[0.07]
-                bg-[#0b100c]
-                p-5
-              "
-            >
-              <span
-                className="
-                  text-[10px] font-bold uppercase
-                  tracking-[0.18em]
-                  text-gray-600
-                "
-              >
-                Progresso
-              </span>
-
-              <strong className="mt-2 block text-lg font-black text-lime-400">
-                Todas as 5 regiões finalizadas
-              </strong>
-            </div>
           </div>
+
         </div>
-      </section>
+
+      </header>
 
       {/* =====================================================
-          TEAM
+          TEAM SUMMARY
       ===================================================== */}
 
-      <section className="mx-auto max-w-7xl px-5 py-12 sm:px-6">
-        <div className="mb-7">
-          <p
-            className="
-              text-[10px] font-bold uppercase
-              tracking-[0.2em]
-              text-lime-400
-            "
-          >
-            Build
-          </p>
+      <section className="border-b border-white/[0.06] bg-[#080b08]">
 
-          <h2
-            className="
-              mt-2 text-2xl font-black
-              tracking-tight text-white
-              md:text-3xl
-            "
-          >
-            Equipe 6 Pillar
-          </h2>
+        <div className="mx-auto max-w-7xl px-5 py-8 sm:px-6">
 
-          <p className="mt-2 text-sm text-gray-500">
-            Configuração recomendada para executar a rota.
-          </p>
-        </div>
+          <div className="mb-5">
 
-        <div
-          className="
-            grid grid-cols-1 gap-5
-            lg:grid-cols-2
-          "
-        >
-          {team.map((pokemon, index) => (
-            <TeamCard
-              key={pokemon.name}
-              pokemon={pokemon}
-              index={index}
-            />
-          ))}
-        </div>
-      </section>
+            <div className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-600">
+              Equipe
+            </div>
 
-      {/* =====================================================
-          ROUTE
-      ===================================================== */}
-
-      <section
-        id="rota"
-        className="
-          border-t border-white/[0.06]
-          bg-[#080c08]
-        "
-      >
-        <div className="mx-auto max-w-7xl px-5 py-12 sm:px-6">
-
-          <div className="mb-8">
-            <p
-              className="
-                text-[10px] font-bold uppercase
-                tracking-[0.2em]
-                text-lime-400
-              "
-            >
-              Basic Route
-            </p>
-
-            <h2
-              className="
-                mt-2 text-2xl font-black
-                tracking-tight text-white
-                md:text-3xl
-              "
-            >
-              Rota dos Gyms
+            <h2 className="mt-1 text-xl font-black text-white">
+              Six Pillars
             </h2>
 
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-500">
-              Selecione uma região para visualizar a ordem dos
-              Gyms e as decisões necessárias em cada batalha.
-            </p>
           </div>
 
-          {/* REGION NAV */}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
 
-          <div
-            className="
-              mb-7 flex gap-2
-              overflow-x-auto pb-1
-            "
-          >
-            {regions.map((item) => {
-              const active =
-                item.name === activeRegion;
+            {[
+              "Typhlosion",
+              "Blastoise",
+              "Vanilluxe",
+              "Garchomp",
+              "Weezing",
+              "Togekiss",
+            ].map((name) => (
 
-              return (
-                <button
-                  key={item.name}
-                  type="button"
-                  onClick={() =>
-                    setActiveRegion(item.name)
-                  }
-                  className={[
-                    "shrink-0 rounded-xl border",
-                    "px-4 py-2.5 text-sm font-bold",
-                    "transition-all duration-200",
-                    active
-                      ? "border-lime-400/25 bg-lime-400/10 text-lime-400"
-                      : "border-white/[0.07] bg-white/[0.025] text-gray-500 hover:border-lime-400/20 hover:text-lime-400",
-                  ].join(" ")}
-                >
-                  {item.name}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* REGION HEADER */}
-
-          <div
-            className="
-              mb-5 flex items-end
-              justify-between gap-4
-            "
-          >
-            <div>
-              <span
-                className="
-                  text-[10px] font-bold uppercase
-                  tracking-[0.18em]
-                  text-gray-600
-                "
-              >
-                Região atual
-              </span>
-
-              <h3 className="mt-1 text-2xl font-black text-white">
-                {region.name}
-              </h3>
-            </div>
-
-            <span
-              className="
-                rounded-lg
-                border border-white/[0.07]
-                bg-white/[0.025]
-                px-3 py-1.5
-                text-xs font-bold
-                text-gray-500
-              "
-            >
-              {region.gyms.length} Gyms
-            </span>
-          </div>
-
-          {/* GYMS */}
-
-          <div className="space-y-3">
-            {region.gyms.map((gym, index) => (
-              <GymCard
-                key={`${region.name}-${gym.city}`}
-                gym={gym}
-                index={index}
-              />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* =====================================================
-          QUICK NOTES
-      ===================================================== */}
-
-      <section className="border-t border-white/[0.06]">
-        <div className="mx-auto max-w-7xl px-5 py-10 sm:px-6">
-          <div
-            className="
-              rounded-2xl
-              border border-lime-400/15
-              bg-lime-400/[0.035]
-              p-5
-            "
-          >
-            <div className="flex items-start gap-4">
               <div
-                className="
-                  flex h-10 w-10 shrink-0
-                  items-center justify-center
-                  rounded-xl
-                  border border-lime-400/20
-                  bg-lime-400/[0.07]
-                  text-lime-400
-                "
+                key={name}
+                className="rounded-2xl border border-white/[0.06] bg-black/20 p-4 text-center"
               >
-                !
+
+                <div className="flex h-24 items-center justify-center">
+
+                  <PokemonSprite
+                    name={name}
+                    size={90}
+                  />
+
+                </div>
+
+                <div className="mt-2 text-xs font-black text-gray-300">
+                  {name}
+                </div>
+
               </div>
 
-              <div>
-                <h3 className="font-black text-white">
-                  Atenção durante a rota
-                </h3>
+            ))}
 
-                <p
-                  className="
-                    mt-1 text-sm leading-6
-                    text-gray-500
-                  "
-                >
-                  Algumas batalhas possuem variações
-                  dependendo dos Pokémon encontrados.
-                  Sempre confira a condição específica do
-                  Gym antes de executar a jogada.
-                </p>
-              </div>
-            </div>
           </div>
+
         </div>
+
       </section>
 
       {/* =====================================================
-          FOOTER
+          CONTINUOUS ROUTE
       ===================================================== */}
 
-      <section
-        className="
-          border-t border-white/[0.06]
-          bg-[#080c08]
-        "
-      >
-        <div
-          className="
-            mx-auto max-w-7xl
-            px-5 py-8 sm:px-6
-          "
-        >
-          <div
-            className="
-              flex flex-col gap-4
-              sm:flex-row
-              sm:items-center
-              sm:justify-between
-            "
-          >
-            <div>
-              <p className="text-sm font-bold text-white">
-                6 Pillar Normal
-              </p>
+      <div className="mx-auto max-w-7xl px-5 pb-24 sm:px-6">
 
-              <p className="mt-1 text-xs text-gray-600">
-                Estratégia de Gym Run utilizada pelo time
-                neverTakeBan.
-              </p>
+        {gyms.map((gym, index) => {
+
+          const showRegion =
+            currentRegion !== gym.region;
+
+          currentRegion = gym.region;
+
+          return (
+            <div key={`${gym.region}-${gym.city}`}>
+
+              {showRegion && (
+                <RegionHeader
+                  region={gym.region}
+                />
+              )}
+
+              <div className="relative">
+
+                {/* vertical route line */}
+
+                {index < gyms.length - 1 && (
+                  <div className="absolute left-1/2 top-full hidden h-12 w-px -translate-x-1/2 bg-gradient-to-b from-lime-400/20 to-transparent lg:block" />
+                )}
+
+                <GymCard gym={gym} />
+
+              </div>
+
             </div>
+          );
+        })}
+
+      </div>
+
+      {/* =====================================================
+          END
+      ===================================================== */}
+
+      <section className="border-t border-white/[0.06] bg-[#080b08]">
+
+        <div className="mx-auto max-w-7xl px-5 py-10 sm:px-6">
+
+          <div className="rounded-3xl border border-lime-400/20 bg-lime-400/[0.035] p-7 text-center">
+
+            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-lime-400">
+              Rota concluída
+            </div>
+
+            <h2 className="mt-3 text-2xl font-black text-white">
+              6 Pillars Gym Rerun
+            </h2>
+
+            <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-gray-500">
+              Todas as instruções da rota foram apresentadas em sequência.
+              Basta voltar ao topo da página na próxima run.
+            </p>
 
             <Link
               href="/farm"
-              className="
-                inline-flex w-fit
-                items-center gap-2
-                rounded-xl
-                border border-white/[0.07]
-                bg-white/[0.025]
-                px-4 py-2.5
-                text-xs font-bold
-                text-gray-500
-                transition-all
-                hover:border-lime-400/30
-                hover:bg-lime-400/[0.06]
-                hover:text-lime-400
-              "
+              className="mt-6 inline-flex rounded-xl border border-white/[0.08] bg-white/[0.025] px-5 py-3 text-xs font-black text-gray-400 transition-colors hover:border-lime-400/20 hover:text-lime-400"
             >
-              ← Todos os Farms
+              ← Voltar para Farms
             </Link>
+
           </div>
+
         </div>
+
       </section>
+
     </main>
   );
 }
