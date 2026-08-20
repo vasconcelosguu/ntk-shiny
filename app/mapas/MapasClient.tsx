@@ -38,8 +38,6 @@ type ExtendedEncounter = MapEncounter & {
   isHorde3x?: boolean;
   isHorde5x?: boolean;
 
-  // Compatibilidade caso o lib/maps ainda entregue
-  // os nomes originais do JSON.
   rarity_morning?: string;
   rarity_day?: string;
   rarity_night?: string;
@@ -52,11 +50,6 @@ type ExtendedEncounter = MapEncounter & {
    DATA HELPERS
 ========================================================= */
 
-/**
- * Converte MapEncounter para a estrutura de dados que
- * precisamos sem depender exclusivamente da nomenclatura
- * usada no lib/maps.ts.
- */
 function asExtendedEncounter(
   encounter: MapEncounter
 ): ExtendedEncounter {
@@ -118,13 +111,162 @@ function isSingle(encounter: MapEncounter) {
 }
 
 /* =========================================================
+   ENCOUNTER FILTER MATCHING
+========================================================= */
+
+/**
+ * Os filtros dentro do mesmo grupo usam OU.
+ *
+ * Exemplo:
+ *
+ * Horde ×3 + Horde ×5
+ *
+ * retorna:
+ *
+ * Horde ×3 OU Horde ×5
+ *
+ * Já grupos diferentes usam E:
+ *
+ * Horde ×3 + Lure
+ *
+ * retorna:
+ *
+ * Horde ×3 E Lure
+ */
+function matchesEncounterTypeFilters(
+  encounter: MapEncounter,
+  selected: EncounterFilter[]
+) {
+  if (selected.length === 0) {
+    return true;
+  }
+
+  return selected.some((filter) => {
+    switch (filter) {
+      case "single":
+        return isSingle(encounter);
+
+      case "horde3":
+        return isHorde3(encounter);
+
+      case "horde5":
+        return isHorde5(encounter);
+
+      default:
+        return false;
+    }
+  });
+}
+
+function matchesMethodFilters(
+  encounter: MapEncounter,
+  selectedMethods: string[]
+) {
+  if (selectedMethods.length === 0) {
+    return true;
+  }
+
+  return selectedMethods.some(
+    (method) =>
+      method.toLowerCase().trim() ===
+      encounter.method.toLowerCase().trim()
+  );
+}
+
+function matchesSeason(
+  encounterSeason: string | undefined,
+  selectedSeason: string
+) {
+  if (selectedSeason === "all") {
+    return true;
+  }
+
+  if (!encounterSeason) {
+    return false;
+  }
+
+  const encounterNormalized =
+    encounterSeason
+      .toLowerCase()
+      .trim();
+
+  const selectedNormalized =
+    selectedSeason
+      .toLowerCase()
+      .trim();
+
+  /*
+   * Any / All significa que o Pokémon
+   * aparece durante todas as estações.
+   *
+   * Portanto:
+   *
+   * Any + Primavera = válido
+   * Any + Verão = válido
+   * Any + Outono = válido
+   * Any + Inverno = válido
+   */
+
+  if (
+    encounterNormalized === "any" ||
+    encounterNormalized === "all"
+  ) {
+    return true;
+  }
+
+  return (
+    encounterNormalized ===
+    selectedNormalized
+  );
+}
+
+function matchesFilters(
+  encounter: MapEncounter,
+  season: string,
+  selectedMethods: string[],
+  selectedEncounters: EncounterFilter[]
+) {
+  /*
+   * GRUPOS DIFERENTES = E
+   */
+
+  if (
+    !matchesSeason(
+      encounter.season,
+      season
+    )
+  ) {
+    return false;
+  }
+
+  if (
+    !matchesMethodFilters(
+      encounter,
+      selectedMethods
+    )
+  ) {
+    return false;
+  }
+
+  if (
+    !matchesEncounterTypeFilters(
+      encounter,
+      selectedEncounters
+    )
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
+/* =========================================================
    METHOD
 ========================================================= */
 
 function getMethodIcon(method: string) {
-  const normalized = method
-    .toLowerCase()
-    .trim();
+  const normalized =
+    method.toLowerCase().trim();
 
   if (
     normalized.includes("sweet scent") ||
@@ -178,9 +320,8 @@ function getMethodIcon(method: string) {
 }
 
 function getMethodDescription(method: string) {
-  const normalized = method
-    .toLowerCase()
-    .trim();
+  const normalized =
+    method.toLowerCase().trim();
 
   if (
     normalized.includes("sweet scent") ||
@@ -238,9 +379,8 @@ function getMethodDescription(method: string) {
 ========================================================= */
 
 function formatSeason(season: string) {
-  const normalized = season
-    .toLowerCase()
-    .trim();
+  const normalized =
+    season.toLowerCase().trim();
 
   if (
     normalized.includes("spring") ||
@@ -284,62 +424,10 @@ function formatSeason(season: string) {
     };
   }
 
-  if (
-    normalized === "all" ||
-    normalized === "any"
-  ) {
-    return {
-      label: "Todas",
-      icon: "◉",
-    };
-  }
-
   return {
-    label: season,
+    label: "Todas",
     icon: "◉",
   };
-}
-
-/**
- * Importante:
- *
- * Alguns registros usam "All" / "Any".
- * Esses registros devem aparecer quando uma
- * estação específica estiver selecionada.
- */
-function matchesSeason(
-  encounterSeason: string | undefined,
-  selectedSeason: string
-) {
-  if (selectedSeason === "all") {
-    return true;
-  }
-
-  if (!encounterSeason) {
-    return false;
-  }
-
-  const encounterNormalized =
-    encounterSeason
-      .toLowerCase()
-      .trim();
-
-  const selectedNormalized =
-    selectedSeason
-      .toLowerCase()
-      .trim();
-
-  if (
-    encounterNormalized === "all" ||
-    encounterNormalized === "any"
-  ) {
-    return true;
-  }
-
-  return (
-    encounterNormalized ===
-    selectedNormalized
-  );
 }
 
 function getSeasons(
@@ -472,251 +560,36 @@ function formatLevel(
    ENCOUNTER TYPE
 ========================================================= */
 
-function getEncounterType(
+function getEncounterTypes(
   encounter: MapEncounter
 ) {
+  const types: {
+    label: string;
+    icon: string;
+  }[] = [];
+
   if (isHorde3(encounter)) {
-    return {
+    types.push({
       label: "Horde ×3",
       icon: "👥",
-    };
+    });
   }
 
   if (isHorde5(encounter)) {
-    return {
+    types.push({
       label: "Horde ×5",
       icon: "👥",
-    };
+    });
   }
 
-  return {
-    label: "Single",
-    icon: "●",
-  };
-}
+  if (types.length === 0) {
+    types.push({
+      label: "Single",
+      icon: "●",
+    });
+  }
 
-/* =========================================================
-   POKEMON CARD
-========================================================= */
-
-function PokemonCard({
-  encounter,
-}: {
-  encounter: MapEncounter;
-}) {
-  const sprite = getPokemonSprite(
-    encounter.pokemonId
-  );
-
-  const type =
-    getEncounterType(encounter);
-
-  const rarityMorning =
-    getRarity(
-      encounter,
-      "morning"
-    );
-
-  const rarityDay =
-    getRarity(
-      encounter,
-      "day"
-    );
-
-  const rarityNight =
-    getRarity(
-      encounter,
-      "night"
-    );
-
-  return (
-    <article
-      className="
-        group
-        relative
-        overflow-hidden
-        rounded-2xl
-        border
-        border-white/[0.055]
-        bg-[#0d120d]
-        p-3
-        transition-all
-        duration-200
-        hover:-translate-y-[1px]
-        hover:border-lime-400/20
-        hover:bg-[#101610]
-      "
-    >
-      <div className="flex gap-3">
-
-        {/* SPRITE */}
-
-        <div
-          className="
-            flex
-            h-[72px]
-            w-[72px]
-            shrink-0
-            items-center
-            justify-center
-            rounded-xl
-            bg-[#080c08]
-            ring-1
-            ring-white/[0.04]
-          "
-        >
-          {sprite ? (
-            <img
-              src={sprite}
-              alt={encounter.pokemon}
-              className="
-                h-[64px]
-                w-[64px]
-                object-contain
-                [image-rendering:pixelated]
-                transition-transform
-                duration-200
-                group-hover:scale-110
-              "
-            />
-          ) : (
-            <span className="text-xl text-gray-700">
-              ?
-            </span>
-          )}
-        </div>
-
-        {/* INFO */}
-
-        <div className="min-w-0 flex-1">
-
-          <div className="flex items-start justify-between gap-2">
-
-            <p
-              className="
-                truncate
-                text-sm
-                font-black
-                capitalize
-                text-white
-              "
-            >
-              {encounter.pokemon}
-            </p>
-
-            <span
-              className="
-                shrink-0
-                rounded-md
-                border
-                border-lime-400/10
-                bg-lime-400/[0.04]
-                px-1.5
-                py-0.5
-                text-[8px]
-                font-black
-                text-lime-400
-              "
-            >
-              {type.icon} {type.label}
-            </span>
-
-          </div>
-
-          {/* LEVEL + SEASON */}
-
-          <div
-            className="
-              mt-1.5
-              flex
-              flex-wrap
-              gap-1.5
-            "
-          >
-
-            <span
-              className="
-                rounded-md
-                border
-                border-white/[0.06]
-                bg-white/[0.025]
-                px-1.5
-                py-0.5
-                text-[9px]
-                font-bold
-                text-gray-500
-              "
-            >
-              {formatLevel(encounter)}
-            </span>
-
-            {encounter.season && (
-              <span
-                className="
-                  rounded-md
-                  bg-white/[0.025]
-                  px-1.5
-                  py-0.5
-                  text-[9px]
-                  font-bold
-                  text-gray-500
-                "
-              >
-                {
-                  formatSeason(
-                    encounter.season
-                  ).icon
-                }{" "}
-                {
-                  formatSeason(
-                    encounter.season
-                  ).label
-                }
-              </span>
-            )}
-
-          </div>
-
-        </div>
-
-      </div>
-
-      {/* RARITIES */}
-
-      <div
-        className="
-          mt-3
-          grid
-          grid-cols-3
-          gap-1.5
-          border-t
-          border-white/[0.05]
-          pt-2.5
-        "
-      >
-
-        <Rarity
-          icon="🌅"
-          label="Manhã"
-          value={rarityMorning}
-        />
-
-        <Rarity
-          icon="☀️"
-          label="Dia"
-          value={rarityDay}
-        />
-
-        <Rarity
-          icon="🌙"
-          label="Noite"
-          value={rarityNight}
-        />
-
-      </div>
-
-    </article>
-  );
+  return types;
 }
 
 /* =========================================================
@@ -782,6 +655,230 @@ function Rarity({
 }
 
 /* =========================================================
+   POKEMON CARD
+========================================================= */
+
+function PokemonCard({
+  encounter,
+}: {
+  encounter: MapEncounter;
+}) {
+  const sprite = getPokemonSprite(
+    encounter.pokemonId
+  );
+
+  const encounterTypes =
+    getEncounterTypes(encounter);
+
+  return (
+    <article
+      className="
+        group
+        relative
+        overflow-hidden
+        rounded-xl
+        border
+        border-white/[0.055]
+        bg-[#0d120d]
+        p-2.5
+        transition-all
+        duration-200
+        hover:border-lime-400/20
+        hover:bg-[#101610]
+      "
+    >
+      <div className="flex gap-2.5">
+        {/* SPRITE */}
+
+        <div
+          className="
+            flex
+            h-[62px]
+            w-[62px]
+            shrink-0
+            items-center
+            justify-center
+            rounded-lg
+            bg-[#080c08]
+            ring-1
+            ring-white/[0.04]
+          "
+        >
+          {sprite ? (
+            <img
+              src={sprite}
+              alt={encounter.pokemon}
+              className="
+                h-[56px]
+                w-[56px]
+                object-contain
+                [image-rendering:pixelated]
+                transition-transform
+                duration-200
+                group-hover:scale-110
+              "
+            />
+          ) : (
+            <span className="text-xl text-gray-700">
+              ?
+            </span>
+          )}
+        </div>
+
+        {/* INFO */}
+
+        <div className="min-w-0 flex-1">
+          <div
+            className="
+              flex
+              items-start
+              justify-between
+              gap-2
+            "
+          >
+            <p
+              className="
+                truncate
+                text-sm
+                font-black
+                capitalize
+                text-white
+              "
+            >
+              {encounter.pokemon}
+            </p>
+          </div>
+
+          <div
+            className="
+              mt-1
+              flex
+              flex-wrap
+              gap-1
+            "
+          >
+            <span
+              className="
+                rounded-md
+                border
+                border-white/[0.06]
+                bg-white/[0.025]
+                px-1.5
+                py-0.5
+                text-[8px]
+                font-bold
+                text-gray-500
+              "
+            >
+              {formatLevel(encounter)}
+            </span>
+
+            {encounter.season && (
+              <span
+                className="
+                  rounded-md
+                  border
+                  border-white/[0.04]
+                  bg-white/[0.02]
+                  px-1.5
+                  py-0.5
+                  text-[8px]
+                  font-bold
+                  text-gray-500
+                "
+              >
+                {
+                  formatSeason(
+                    encounter.season
+                  ).icon
+                }{" "}
+                {
+                  formatSeason(
+                    encounter.season
+                  ).label
+                }
+              </span>
+            )}
+          </div>
+
+          <div
+            className="
+              mt-1
+              flex
+              flex-wrap
+              gap-1
+            "
+          >
+            {encounterTypes.map(
+              (type) => (
+                <span
+                  key={type.label}
+                  className="
+                    rounded-md
+                    border
+                    border-lime-400/10
+                    bg-lime-400/[0.04]
+                    px-1.5
+                    py-0.5
+                    text-[8px]
+                    font-black
+                    text-lime-400
+                  "
+                >
+                  {type.icon}{" "}
+                  {type.label}
+                </span>
+              )
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* RARITIES */}
+
+      <div
+        className="
+          mt-2.5
+          grid
+          grid-cols-3
+          gap-1
+          border-t
+          border-white/[0.05]
+          pt-2
+        "
+      >
+        <Rarity
+          icon="🌅"
+          label="Manhã"
+          value={getRarity(
+            encounter,
+            "morning"
+          )}
+        />
+
+        <Rarity
+          icon="☀️"
+          label="Dia"
+          value={getRarity(
+            encounter,
+            "day"
+          )}
+        />
+
+        <Rarity
+          icon="🌙"
+          label="Noite"
+          value={getRarity(
+            encounter,
+            "night"
+          )}
+        />
+      </div>
+    </article>
+  );
+}
+
+/* =========================================================
    METHOD SECTION
 ========================================================= */
 
@@ -793,59 +890,51 @@ function MethodSection({
   encounters: MapEncounter[];
 }) {
   return (
-    <div className="overflow-hidden">
-
+    <div>
       <div
         className="
+          mb-2
           flex
           items-center
           justify-between
-          gap-4
-          border-b
-          border-white/[0.045]
-          pb-3
+          gap-3
         "
       >
-
-        <div className="flex items-center gap-3">
-
-          <div
+        <div className="flex items-center gap-2">
+          <span
             className="
               flex
-              h-9
-              w-9
+              h-7
+              w-7
               items-center
               justify-center
               rounded-lg
               border
               border-lime-400/10
               bg-lime-400/[0.045]
-              text-base
+              text-sm
             "
           >
             {getMethodIcon(method)}
-          </div>
+          </span>
 
           <div>
-
             <p
               className="
-                text-[11px]
+                text-[10px]
                 font-black
                 uppercase
-                tracking-[0.16em]
+                tracking-[0.14em]
                 text-white
               "
             >
               {method}
             </p>
 
-            <p className="mt-0.5 text-[10px] text-gray-600">
+            <p className="text-[8px] text-gray-600">
               {getMethodDescription(method)}
             </p>
-
           </div>
-
         </div>
 
         <span
@@ -854,26 +943,25 @@ function MethodSection({
             border
             border-white/[0.05]
             bg-white/[0.02]
-            px-2.5
-            py-1
-            text-[9px]
+            px-2
+            py-0.5
+            text-[8px]
             font-black
             text-gray-500
           "
         >
           {encounters.length}
         </span>
-
       </div>
 
       <div
         className="
-          mt-3
           grid
           grid-cols-1
           gap-2
           md:grid-cols-2
           xl:grid-cols-3
+          2xl:grid-cols-4
         "
       >
         {encounters.map(
@@ -893,7 +981,6 @@ function MethodSection({
           )
         )}
       </div>
-
     </div>
   );
 }
@@ -918,85 +1005,15 @@ function LocationDropdown({
 
   const filteredEncounters =
     useMemo(() => {
-
       return location.encounters.filter(
-        (encounter) => {
-
-          /* =========================
-             SEASON
-          ========================= */
-
-          if (
-            !matchesSeason(
-              encounter.season,
-              season
-            )
-          ) {
-            return false;
-          }
-
-          /* =========================
-             METHOD
-          ========================= */
-
-          if (
-            selectedMethods.length > 0 &&
-            !selectedMethods.includes(
-              encounter.method
-            )
-          ) {
-            return false;
-          }
-
-          /* =========================
-             ENCOUNTER TYPE
-          ========================= */
-
-          if (
-            selectedEncounters.length > 0
-          ) {
-
-            const matchesType =
-              selectedEncounters.some(
-                (filter) => {
-
-                  if (
-                    filter === "single"
-                  ) {
-                    return isSingle(
-                      encounter
-                    );
-                  }
-
-                  if (
-                    filter === "horde3"
-                  ) {
-                    return isHorde3(
-                      encounter
-                    );
-                  }
-
-                  if (
-                    filter === "horde5"
-                  ) {
-                    return isHorde5(
-                      encounter
-                    );
-                  }
-
-                  return false;
-                }
-              );
-
-            if (!matchesType) {
-              return false;
-            }
-          }
-
-          return true;
-        }
+        (encounter) =>
+          matchesFilters(
+            encounter,
+            season,
+            selectedMethods,
+            selectedEncounters
+          )
       );
-
     }, [
       location.encounters,
       season,
@@ -1006,26 +1023,19 @@ function LocationDropdown({
 
   const methods =
     useMemo(() => {
-
       const grouped =
         new Map<
           string,
           MapEncounter[]
         >();
 
-      for (
-        const encounter of
-          filteredEncounters
-      ) {
-
+      for (const encounter of filteredEncounters) {
         const existing =
           grouped.get(
             encounter.method
           ) ?? [];
 
-        existing.push(
-          encounter
-        );
+        existing.push(encounter);
 
         grouped.set(
           encounter.method,
@@ -1036,7 +1046,6 @@ function LocationDropdown({
       return Array.from(
         grouped.entries()
       );
-
     }, [filteredEncounters]);
 
   const uniquePokemon =
@@ -1047,19 +1056,29 @@ function LocationDropdown({
       )
     ).size;
 
+  /*
+   * Se o filtro deixou o local sem
+   * nenhum resultado, não precisamos
+   * mostrar a caixa.
+   */
+
+  if (filteredEncounters.length === 0) {
+    return null;
+  }
+
   return (
     <article
       className="
         overflow-hidden
-        rounded-2xl
+        rounded-xl
         border
         border-white/[0.07]
         bg-[#0a0e0a]
-        shadow-[0_10px_40px_rgba(0,0,0,0.12)]
+        transition
+        hover:border-white/[0.1]
       "
     >
-
-      {/* LOCATION HEADER */}
+      {/* HEADER */}
 
       <button
         type="button"
@@ -1073,31 +1092,27 @@ function LocationDropdown({
           w-full
           items-center
           justify-between
-          gap-4
-          px-4
-          py-3.5
+          gap-3
+          px-3.5
+          py-3
           text-left
           transition
           hover:bg-white/[0.02]
-          sm:px-5
         "
       >
-
-        <div className="flex min-w-0 items-center gap-3">
-
+        <div className="flex min-w-0 items-center gap-2.5">
           <div
             className={`
               flex
-              h-9
-              w-9
+              h-8
+              w-8
               shrink-0
               items-center
               justify-center
-              rounded-xl
+              rounded-lg
               border
               text-sm
               font-black
-              transition
               ${
                 open
                   ? "border-lime-400/20 bg-lime-400/10 text-lime-400"
@@ -1109,14 +1124,12 @@ function LocationDropdown({
           </div>
 
           <div className="min-w-0">
-
             <h3
               className="
                 truncate
                 text-sm
                 font-black
                 text-white
-                sm:text-base
               "
             >
               {location.name}
@@ -1124,23 +1137,14 @@ function LocationDropdown({
 
             <div
               className="
-                mt-1
+                mt-0.5
                 flex
                 flex-wrap
                 items-center
-                gap-2
+                gap-1.5
               "
             >
-
-              <span
-                className="
-                  text-[9px]
-                  font-bold
-                  uppercase
-                  tracking-wider
-                  text-gray-600
-                "
-              >
+              <span className="text-[8px] font-bold uppercase tracking-wider text-gray-600">
                 {uniquePokemon} Pokémon
               </span>
 
@@ -1148,61 +1152,33 @@ function LocationDropdown({
                 •
               </span>
 
-              <span
-                className="
-                  text-[9px]
-                  font-bold
-                  uppercase
-                  tracking-wider
-                  text-gray-600
-                "
-              >
-                {methods.length} métodos
-              </span>
-
-              <span className="text-gray-800">
-                •
-              </span>
-
-              <span
-                className="
-                  text-[9px]
-                  font-bold
-                  uppercase
-                  tracking-wider
-                  text-lime-400/70
-                "
-              >
+              <span className="text-[8px] font-bold uppercase tracking-wider text-lime-400/70">
                 {filteredEncounters.length} encontros
               </span>
-
             </div>
-
           </div>
-
         </div>
 
         <span
           className="
             hidden
             shrink-0
-            rounded-lg
+            rounded-md
             border
-            border-white/[0.06]
+            border-white/[0.05]
             bg-white/[0.02]
-            px-3
-            py-1.5
-            text-[9px]
+            px-2
+            py-1
+            text-[8px]
             font-black
             uppercase
             tracking-wider
-            text-gray-600
+            text-gray-700
             sm:block
           "
         >
           MAP
         </span>
-
       </button>
 
       {/* CONTENT */}
@@ -1213,53 +1189,23 @@ function LocationDropdown({
             border-t
             border-white/[0.05]
             bg-[#080c08]
-            px-4
-            py-5
-            sm:px-5
+            px-3.5
+            py-4
           "
         >
-
-          {methods.length === 0 ? (
-            <div
-              className="
-                rounded-xl
-                border
-                border-dashed
-                border-white/[0.06]
-                py-10
-                text-center
-              "
-            >
-
-              <p className="text-sm font-bold text-gray-500">
-                Nenhum Pokémon encontrado.
-              </p>
-
-              <p className="mt-1 text-xs text-gray-700">
-                Os filtros atuais não possuem resultados
-                neste local.
-              </p>
-
-            </div>
-          ) : (
-            <div className="space-y-7">
-
-              {methods.map(
-                ([method, encounters]) => (
-                  <MethodSection
-                    key={method}
-                    method={method}
-                    encounters={encounters}
-                  />
-                )
-              )}
-
-            </div>
-          )}
-
+          <div className="space-y-5">
+            {methods.map(
+              ([method, encounters]) => (
+                <MethodSection
+                  key={method}
+                  method={method}
+                  encounters={encounters}
+                />
+              )
+            )}
+          </div>
         </div>
       )}
-
     </article>
   );
 }
@@ -1281,10 +1227,8 @@ function RegionContent({
   selectedEncounters: EncounterFilter[];
   locationSearch: string;
 }) {
-
   const locations =
     useMemo(() => {
-
       const search =
         locationSearch
           .trim()
@@ -1292,7 +1236,6 @@ function RegionContent({
 
       return region.locations.filter(
         (location) => {
-
           if (
             search &&
             !location.name
@@ -1302,82 +1245,17 @@ function RegionContent({
             return false;
           }
 
-          const hasResult =
-            location.encounters.some(
-              (encounter) => {
-
-                if (
-                  !matchesSeason(
-                    encounter.season,
-                    season
-                  )
-                ) {
-                  return false;
-                }
-
-                if (
-                  selectedMethods.length >
-                    0 &&
-                  !selectedMethods.includes(
-                    encounter.method
-                  )
-                ) {
-                  return false;
-                }
-
-                if (
-                  selectedEncounters.length >
-                    0
-                ) {
-
-                  const matchesType =
-                    selectedEncounters.some(
-                      (filter) => {
-
-                        if (
-                          filter ===
-                          "single"
-                        ) {
-                          return isSingle(
-                            encounter
-                          );
-                        }
-
-                        if (
-                          filter ===
-                          "horde3"
-                        ) {
-                          return isHorde3(
-                            encounter
-                          );
-                        }
-
-                        if (
-                          filter ===
-                          "horde5"
-                        ) {
-                          return isHorde5(
-                            encounter
-                          );
-                        }
-
-                        return false;
-                      }
-                    );
-
-                  if (!matchesType) {
-                    return false;
-                  }
-                }
-
-                return true;
-              }
-            );
-
-          return hasResult;
+          return location.encounters.some(
+            (encounter) =>
+              matchesFilters(
+                encounter,
+                season,
+                selectedMethods,
+                selectedEncounters
+              )
+          );
         }
       );
-
     }, [
       region.locations,
       season,
@@ -1396,11 +1274,10 @@ function RegionContent({
           border-white/[0.07]
           bg-white/[0.01]
           px-6
-          py-16
+          py-14
           text-center
         "
       >
-
         <div className="text-3xl">
           🔎
         </div>
@@ -1410,16 +1287,22 @@ function RegionContent({
         </p>
 
         <p className="mt-1 text-xs text-gray-700">
-          Tente remover algum filtro ou alterar a busca.
+          Tente remover algum filtro ou
+          alterar a busca.
         </p>
-
       </div>
     );
   }
 
   return (
-    <div className="space-y-2.5">
-
+    <div
+      className="
+        grid
+        grid-cols-1
+        gap-2.5
+        lg:grid-cols-2
+      "
+    >
       {locations.map(
         (location) => (
           <LocationDropdown
@@ -1435,7 +1318,6 @@ function RegionContent({
           />
         )
       )}
-
     </div>
   );
 }
@@ -1458,14 +1340,13 @@ function Stat({
         border
         border-white/[0.06]
         bg-white/[0.02]
-        px-4
-        py-3
+        px-3
+        py-2.5
       "
     >
-
       <p
         className="
-          text-[9px]
+          text-[8px]
           font-bold
           uppercase
           tracking-[0.14em]
@@ -1475,10 +1356,9 @@ function Stat({
         {label}
       </p>
 
-      <p className="mt-1 text-2xl font-black text-white">
+      <p className="mt-0.5 text-xl font-black text-white">
         {value.toLocaleString("pt-BR")}
       </p>
-
     </div>
   );
 }
@@ -1503,52 +1383,29 @@ function FilterButton({
       className={`
         inline-flex
         items-center
-        gap-1.5
-        rounded-xl
+        gap-1
+        rounded-lg
         border
-        px-3
-        py-2
-        text-[10px]
+        px-2.5
+        py-1.5
+        text-[9px]
         font-black
         transition-all
         ${
           active
-            ? "border-lime-400/30 bg-lime-400/10 text-lime-400 shadow-[0_0_18px_rgba(163,230,53,0.04)]"
+            ? "border-lime-400/30 bg-lime-400/10 text-lime-400"
             : "border-white/[0.06] bg-white/[0.02] text-gray-500 hover:border-white/[0.11] hover:bg-white/[0.035] hover:text-white"
         }
       `}
     >
       {active && (
-        <span className="text-[9px]">
+        <span className="text-[8px]">
           ✓
         </span>
       )}
 
       {children}
     </button>
-  );
-}
-
-/* =========================================================
-   SEASON BUTTON
-========================================================= */
-
-function SeasonButton({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: ReactNode;
-}) {
-  return (
-    <FilterButton
-      active={active}
-      onClick={onClick}
-    >
-      {children}
-    </FilterButton>
   );
 }
 
@@ -1602,14 +1459,13 @@ function FilterPanel({
         border
         border-white/[0.07]
         bg-[#0a0e0a]/95
-        p-4
+        p-3
         shadow-2xl
         shadow-black/20
         backdrop-blur-xl
-        sm:p-5
+        sm:p-4
       "
     >
-
       {/* HEADER */}
 
       <div
@@ -1617,14 +1473,11 @@ function FilterPanel({
           flex
           flex-col
           gap-3
-          lg:flex-row
-          lg:items-center
-          lg:justify-between
+          xl:flex-row
+          xl:items-center
         "
       >
-
-        <div>
-
+        <div className="shrink-0">
           <p
             className="
               text-[9px]
@@ -1637,85 +1490,14 @@ function FilterPanel({
             Filtros
           </p>
 
-          <p className="mt-1 text-xs text-gray-600">
-            Combine várias opções ao mesmo tempo.
+          <p className="mt-0.5 text-[9px] text-gray-600">
+            Combine múltiplas opções.
           </p>
-
         </div>
 
-        <div className="flex items-center gap-2">
+        {/* SEARCH */}
 
-          {activeFilters > 0 && (
-            <span
-              className="
-                rounded-full
-                border
-                border-lime-400/15
-                bg-lime-400/[0.05]
-                px-2.5
-                py-1
-                text-[9px]
-                font-black
-                text-lime-400
-              "
-            >
-              {activeFilters} ativos
-            </span>
-          )}
-
-          <button
-            type="button"
-            onClick={clearFilters}
-            disabled={
-              activeFilters === 0 &&
-              locationSearch === ""
-            }
-            className="
-              rounded-lg
-              border
-              border-white/[0.06]
-              bg-white/[0.02]
-              px-3
-              py-1.5
-              text-[9px]
-              font-black
-              uppercase
-              tracking-wider
-              text-gray-600
-              transition
-              hover:border-red-400/20
-              hover:text-red-400
-              disabled:cursor-default
-              disabled:opacity-30
-            "
-          >
-            Limpar
-          </button>
-
-        </div>
-
-      </div>
-
-      {/* SEARCH */}
-
-      <div className="mt-4">
-
-        <label
-          className="
-            mb-1.5
-            block
-            text-[9px]
-            font-black
-            uppercase
-            tracking-[0.16em]
-            text-gray-600
-          "
-        >
-          Procurar local
-        </label>
-
-        <div className="relative">
-
+        <div className="relative min-w-0 flex-1">
           <span
             className="
               pointer-events-none
@@ -1737,17 +1519,17 @@ function FilterPanel({
                 event.target.value
               )
             }
-            placeholder="Ex.: Route 102, Rota 216..."
+            placeholder="Procurar rota, cidade, caverna..."
             className="
               w-full
-              rounded-xl
+              rounded-lg
               border
               border-white/[0.06]
               bg-[#070a07]
-              py-2.5
-              pl-9
+              py-2
+              pl-8
               pr-3
-              text-xs
+              text-[10px]
               text-white
               outline-none
               placeholder:text-gray-700
@@ -1756,257 +1538,310 @@ function FilterPanel({
               focus:ring-lime-400/10
             "
           />
-
         </div>
 
-      </div>
+        {/* CLEAR */}
 
-      {/* SEASON */}
+        <div className="flex items-center gap-2">
+          {activeFilters > 0 && (
+            <span
+              className="
+                rounded-full
+                border
+                border-lime-400/15
+                bg-lime-400/[0.05]
+                px-2
+                py-1
+                text-[8px]
+                font-black
+                text-lime-400
+              "
+            >
+              {activeFilters} ativos
+            </span>
+          )}
 
-      {seasons.length > 0 && (
-        <div className="mt-5">
-
-          <p
+          <button
+            type="button"
+            onClick={clearFilters}
+            disabled={
+              activeFilters === 0 &&
+              locationSearch === ""
+            }
             className="
-              mb-2
-              text-[9px]
+              rounded-lg
+              border
+              border-white/[0.06]
+              bg-white/[0.02]
+              px-2.5
+              py-1.5
+              text-[8px]
               font-black
               uppercase
-              tracking-[0.16em]
+              tracking-wider
               text-gray-600
+              transition
+              hover:border-red-400/20
+              hover:text-red-400
+              disabled:cursor-default
+              disabled:opacity-30
             "
           >
-            Estação
-          </p>
-
-          <div className="flex flex-wrap gap-1.5">
-
-            <SeasonButton
-              active={
-                selectedSeason ===
-                "all"
-              }
-              onClick={() =>
-                setSelectedSeason(
-                  "all"
-                )
-              }
-            >
-              ◉ Todas
-            </SeasonButton>
-
-            {seasons.map(
-              (season) => {
-
-                const data =
-                  formatSeason(
-                    season
-                  );
-
-                return (
-                  <SeasonButton
-                    key={season}
-                    active={
-                      selectedSeason ===
-                      season
-                    }
-                    onClick={() =>
-                      setSelectedSeason(
-                        season
-                      )
-                    }
-                  >
-                    {data.icon}{" "}
-                    {data.label}
-                  </SeasonButton>
-                );
-              }
-            )}
-
-          </div>
-
+            Limpar
+          </button>
         </div>
-      )}
-
-      {/* ENCOUNTER TYPE */}
-
-      <div className="mt-5">
-
-        <p
-          className="
-            mb-2
-            text-[9px]
-            font-black
-            uppercase
-            tracking-[0.16em]
-            text-gray-600
-          "
-        >
-          Tipo de encontro
-        </p>
-
-        <div className="flex flex-wrap gap-1.5">
-
-          <FilterButton
-            active={selectedEncounters.includes(
-              "single"
-            )}
-            onClick={() =>
-              toggleEncounter(
-                "single"
-              )
-            }
-          >
-            ● Single
-          </FilterButton>
-
-          <FilterButton
-            active={selectedEncounters.includes(
-              "horde3"
-            )}
-            onClick={() =>
-              toggleEncounter(
-                "horde3"
-              )
-            }
-          >
-            👥 Horde ×3
-          </FilterButton>
-
-          <FilterButton
-            active={selectedEncounters.includes(
-              "horde5"
-            )}
-            onClick={() =>
-              toggleEncounter(
-                "horde5"
-              )
-            }
-          >
-            👥 Horde ×5
-          </FilterButton>
-
-        </div>
-
       </div>
 
-      {/* METHODS */}
+      {/* FILTER GRID */}
 
-      {methods.length > 0 && (
-        <div className="mt-5">
+      <div
+        className="
+          mt-3
+          grid
+          grid-cols-1
+          gap-3
+          border-t
+          border-white/[0.05]
+          pt-3
+          lg:grid-cols-[auto_auto_1fr]
+        "
+      >
+        {/* SEASON */}
 
-          <div
-            className="
-              mb-2
-              flex
-              items-center
-              justify-between
-              gap-3
-            "
-          >
-
+        {seasons.length > 0 && (
+          <div>
             <p
               className="
-                text-[9px]
+                mb-1.5
+                text-[8px]
                 font-black
                 uppercase
                 tracking-[0.16em]
                 text-gray-600
               "
             >
-              Método
+              Estação
             </p>
 
-            <span className="text-[9px] text-gray-700">
-              {methods.length} disponíveis
-            </span>
+            <div className="flex flex-wrap gap-1">
+              <FilterButton
+                active={
+                  selectedSeason === "all"
+                }
+                onClick={() =>
+                  setSelectedSeason(
+                    "all"
+                  )
+                }
+              >
+                ◉ Todas
+              </FilterButton>
 
+              {seasons.map(
+                (season) => {
+                  const data =
+                    formatSeason(
+                      season
+                    );
+
+                  return (
+                    <FilterButton
+                      key={season}
+                      active={
+                        selectedSeason ===
+                        season
+                      }
+                      onClick={() =>
+                        setSelectedSeason(
+                          season
+                        )
+                      }
+                    >
+                      {data.icon}{" "}
+                      {data.label}
+                    </FilterButton>
+                  );
+                }
+              )}
+            </div>
           </div>
+        )}
 
-          <div
+        {/* ENCOUNTER TYPE */}
+
+        <div>
+          <p
             className="
-              flex
-              max-h-32
-              flex-wrap
-              gap-1.5
-              overflow-y-auto
-              pr-1
+              mb-1.5
+              text-[8px]
+              font-black
+              uppercase
+              tracking-[0.16em]
+              text-gray-600
             "
           >
+            Encontro
+          </p>
 
-            {methods.map(
-              (method) => (
-                <FilterButton
-                  key={method}
-                  active={selectedMethods.includes(
-                    method
-                  )}
-                  onClick={() =>
-                    toggleMethod(
-                      method
-                    )
-                  }
-                >
-                  {getMethodIcon(
-                    method
-                  )}{" "}
-                  {method}
-                </FilterButton>
-              )
-            )}
+          <div className="flex flex-wrap gap-1">
+            <FilterButton
+              active={selectedEncounters.includes(
+                "single"
+              )}
+              onClick={() =>
+                toggleEncounter(
+                  "single"
+                )
+              }
+            >
+              ● Single
+            </FilterButton>
 
+            <FilterButton
+              active={selectedEncounters.includes(
+                "horde3"
+              )}
+              onClick={() =>
+                toggleEncounter(
+                  "horde3"
+                )
+              }
+            >
+              👥 ×3
+            </FilterButton>
+
+            <FilterButton
+              active={selectedEncounters.includes(
+                "horde5"
+              )}
+              onClick={() =>
+                toggleEncounter(
+                  "horde5"
+                )
+              }
+            >
+              👥 ×5
+            </FilterButton>
           </div>
-
         </div>
-      )}
 
-      {/* ACTIVE FILTER EXPLANATION */}
+        {/* METHODS */}
 
-      {(
-        selectedMethods.length >
-          0 ||
+        {methods.length > 0 && (
+          <div className="min-w-0">
+            <div
+              className="
+                mb-1.5
+                flex
+                items-center
+                justify-between
+              "
+            >
+              <p
+                className="
+                  text-[8px]
+                  font-black
+                  uppercase
+                  tracking-[0.16em]
+                  text-gray-600
+                "
+              >
+                Método
+              </p>
+
+              <span className="text-[8px] text-gray-700">
+                {methods.length}
+              </span>
+            </div>
+
+            <div
+              className="
+                flex
+                max-h-16
+                flex-wrap
+                gap-1
+                overflow-y-auto
+                pr-1
+              "
+            >
+              {methods.map(
+                (method) => (
+                  <FilterButton
+                    key={method}
+                    active={selectedMethods.includes(
+                      method
+                    )}
+                    onClick={() =>
+                      toggleMethod(
+                        method
+                      )
+                    }
+                  >
+                    {getMethodIcon(
+                      method
+                    )}{" "}
+                    {method}
+                  </FilterButton>
+                )
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ACTIVE FILTER INFO */}
+
+      {(selectedMethods.length > 0 ||
         selectedEncounters.length >
-          0
-      ) && (
+          0) && (
         <div
           className="
-            mt-5
-            rounded-xl
+            mt-3
+            flex
+            flex-wrap
+            items-center
+            gap-2
+            rounded-lg
             border
             border-lime-400/10
             bg-lime-400/[0.025]
-            px-3
-            py-2.5
+            px-2.5
+            py-2
           "
         >
-
-          <p
+          <span
             className="
-              text-[9px]
+              text-[8px]
               font-black
               uppercase
               tracking-wider
               text-lime-400
             "
           >
-            Combinação atual
-          </p>
+            Filtros combinados
+          </span>
 
-          <p className="mt-1 text-[10px] leading-5 text-gray-600">
-            Métodos selecionados funcionam como
-            <strong className="text-gray-400">
-              {" "}OU{" "}
-            </strong>
-            entre si. Os tipos de encontro também.
-            Os dois grupos são combinados com
-            <strong className="text-gray-400">
-              {" "}E
-            </strong>.
-          </p>
+          <span className="text-[8px] text-gray-600">
+            Métodos = OU
+          </span>
 
+          <span className="text-gray-800">
+            •
+          </span>
+
+          <span className="text-[8px] text-gray-600">
+            Encontros = OU
+          </span>
+
+          <span className="text-gray-800">
+            •
+          </span>
+
+          <span className="text-[8px] text-gray-600">
+            Grupos = E
+          </span>
         </div>
       )}
-
     </div>
   );
 }
@@ -2019,7 +1854,6 @@ export default function MapasClient({
   regions,
   statistics,
 }: Props) {
-
   const [
     activeRegion,
     setActiveRegion,
@@ -2063,7 +1897,6 @@ export default function MapasClient({
   ======================================================= */
 
   const seasons = useMemo(() => {
-
     if (!activeRegionData) {
       return [];
     }
@@ -2071,7 +1904,6 @@ export default function MapasClient({
     return getSeasons(
       activeRegionData.locations
     );
-
   }, [activeRegionData]);
 
   /* =======================================================
@@ -2079,7 +1911,6 @@ export default function MapasClient({
   ======================================================= */
 
   const methods = useMemo(() => {
-
     if (!activeRegionData) {
       return [];
     }
@@ -2087,16 +1918,8 @@ export default function MapasClient({
     const methodSet =
       new Set<string>();
 
-    for (
-      const location of
-        activeRegionData.locations
-    ) {
-
-      for (
-        const encounter of
-          location.encounters
-      ) {
-
+    for (const location of activeRegionData.locations) {
+      for (const encounter of location.encounters) {
         if (
           matchesSeason(
             encounter.season,
@@ -2107,21 +1930,17 @@ export default function MapasClient({
             encounter.method
           );
         }
-
       }
-
     }
 
     return Array.from(
       methodSet
-    ).sort(
-      (a, b) =>
-        a.localeCompare(
-          b,
-          "pt-BR"
-        )
+    ).sort((a, b) =>
+      a.localeCompare(
+        b,
+        "pt-BR"
+      )
     );
-
   }, [
     activeRegionData,
     selectedSeason,
@@ -2139,12 +1958,11 @@ export default function MapasClient({
       : 0);
 
   /* =======================================================
-     RESULTS COUNT
+     RESULTS
   ======================================================= */
 
   const resultStatistics =
     useMemo(() => {
-
       if (!activeRegionData) {
         return {
           locations: 0,
@@ -2163,11 +1981,7 @@ export default function MapasClient({
 
       let locations = 0;
 
-      for (
-        const location of
-          activeRegionData.locations
-      ) {
-
+      for (const location of activeRegionData.locations) {
         if (
           search &&
           !location.name
@@ -2179,83 +1993,22 @@ export default function MapasClient({
 
         const matching =
           location.encounters.filter(
-            (encounter) => {
-
-              if (
-                !matchesSeason(
-                  encounter.season,
-                  selectedSeason
-                )
-              ) {
-                return false;
-              }
-
-              if (
-                selectedMethods.length >
-                  0 &&
-                !selectedMethods.includes(
-                  encounter.method
-                )
-              ) {
-                return false;
-              }
-
-              if (
-                selectedEncounters.length >
-                  0
-              ) {
-
-                const matchesType =
-                  selectedEncounters.some(
-                    (filter) => {
-
-                      if (
-                        filter ===
-                        "single"
-                      ) {
-                        return isSingle(
-                          encounter
-                        );
-                      }
-
-                      if (
-                        filter ===
-                        "horde3"
-                      ) {
-                        return isHorde3(
-                          encounter
-                        );
-                      }
-
-                      if (
-                        filter ===
-                        "horde5"
-                      ) {
-                        return isHorde5(
-                          encounter
-                        );
-                      }
-
-                      return false;
-                    }
-                  );
-
-                if (!matchesType) {
-                  return false;
-                }
-              }
-
-              return true;
-            }
+            (encounter) =>
+              matchesFilters(
+                encounter,
+                selectedSeason,
+                selectedMethods,
+                selectedEncounters
+              )
           );
 
         if (matching.length > 0) {
           locations += 1;
+
           encounters.push(
             ...matching
           );
         }
-
       }
 
       return {
@@ -2270,7 +2023,6 @@ export default function MapasClient({
             )
           ).size,
       };
-
     }, [
       activeRegionData,
       selectedSeason,
@@ -2283,9 +2035,7 @@ export default function MapasClient({
      CHANGE REGION
   ======================================================= */
 
-  function changeRegion(
-    id: string
-  ) {
+  function changeRegion(id: string) {
     setActiveRegion(id);
     setSelectedSeason("all");
     setSelectedMethods([]);
@@ -2358,7 +2108,6 @@ export default function MapasClient({
         text-white
       "
     >
-
       {/* ===================================================
           HERO
       =================================================== */}
@@ -2373,28 +2122,26 @@ export default function MapasClient({
           to-[#070a07]
         "
       >
-
         <div
           className="
             mx-auto
             max-w-[1400px]
             px-5
-            pb-8
-            pt-10
+            pb-7
+            pt-9
             sm:px-6
             lg:px-8
-            lg:pb-10
-            lg:pt-14
+            lg:pb-8
+            lg:pt-11
           "
         >
-
           <Link
             href="/"
             className="
               inline-flex
               items-center
               gap-2
-              text-sm
+              text-xs
               font-medium
               text-gray-600
               transition
@@ -2404,11 +2151,10 @@ export default function MapasClient({
             ← Voltar para início
           </Link>
 
-          <div className="mt-8">
-
+          <div className="mt-6">
             <p
               className="
-                text-[10px]
+                text-[9px]
                 font-black
                 uppercase
                 tracking-[0.25em]
@@ -2429,9 +2175,7 @@ export default function MapasClient({
                 lg:justify-between
               "
             >
-
               <div>
-
                 <h1
                   className="
                     text-4xl
@@ -2446,30 +2190,30 @@ export default function MapasClient({
 
                 <p
                   className="
-                    mt-3
+                    mt-2
                     max-w-2xl
                     text-sm
                     leading-6
                     text-gray-500
                   "
                 >
-                  Explore os Pokémon encontrados
-                  em cada rota, cidade, caverna e
-                  área do PokeMMO.
+                  Explore Pokémon,
+                  locais, níveis,
+                  métodos, hordas,
+                  estações e
+                  probabilidades de
+                  encontro.
                 </p>
-
               </div>
 
               <div
                 className="
                   grid
-                  grid-cols-2
-                  gap-2
-                  sm:grid-cols-4
-                  lg:min-w-[500px]
+                  grid-cols-4
+                  gap-1.5
+                  lg:min-w-[480px]
                 "
               >
-
                 <Stat
                   label="Regiões"
                   value={
@@ -2497,15 +2241,10 @@ export default function MapasClient({
                     resultStatistics.encounters
                   }
                 />
-
               </div>
-
             </div>
-
           </div>
-
         </div>
-
       </section>
 
       {/* ===================================================
@@ -2519,11 +2258,10 @@ export default function MapasClient({
           z-40
           border-b
           border-white/[0.06]
-          bg-[#070a07]/90
+          bg-[#070a07]/95
           backdrop-blur-xl
         "
       >
-
         <div
           className="
             mx-auto
@@ -2534,19 +2272,16 @@ export default function MapasClient({
             lg:px-8
           "
         >
-
           <div
             className="
               flex
               min-w-max
               gap-1
-              py-2
+              py-1.5
             "
           >
-
             {regions.map(
               (region) => {
-
                 const active =
                   String(
                     region.id
@@ -2568,10 +2303,10 @@ export default function MapasClient({
                     }
                     className={`
                       relative
-                      rounded-xl
-                      px-5
-                      py-3
-                      text-[11px]
+                      rounded-lg
+                      px-4
+                      py-2
+                      text-[10px]
                       font-black
                       transition-all
                       ${
@@ -2582,31 +2317,12 @@ export default function MapasClient({
                     `}
                   >
                     {region.name}
-
-                    {active && (
-                      <span
-                        className="
-                          absolute
-                          bottom-0
-                          left-1/2
-                          h-0.5
-                          w-5
-                          -translate-x-1/2
-                          rounded-full
-                          bg-black/40
-                        "
-                      />
-                    )}
-
                   </button>
                 );
               }
             )}
-
           </div>
-
         </div>
-
       </div>
 
       {/* ===================================================
@@ -2618,13 +2334,12 @@ export default function MapasClient({
           mx-auto
           max-w-[1400px]
           px-5
-          py-6
+          py-5
           sm:px-6
           lg:px-8
-          lg:py-8
+          lg:py-6
         "
       >
-
         {!activeRegionData ? (
           <div
             className="
@@ -2643,59 +2358,52 @@ export default function MapasClient({
           </div>
         ) : (
           <>
-
             {/* REGION HEADER */}
 
             <div
               className="
-                mb-5
+                mb-4
                 flex
-                flex-col
+                items-center
+                justify-between
                 gap-3
-                sm:flex-row
-                sm:items-end
-                sm:justify-between
               "
             >
-
               <div>
-
                 <p
                   className="
-                    text-[9px]
+                    text-[8px]
                     font-black
                     uppercase
                     tracking-[0.22em]
                     text-lime-400
                   "
                 >
-                  Região selecionada
+                  Região
                 </p>
 
                 <h2
                   className="
-                    mt-1
+                    mt-0.5
                     text-2xl
                     font-black
                     tracking-tight
                     text-white
-                    sm:text-3xl
                   "
                 >
                   {activeRegionData.name}
                 </h2>
-
               </div>
 
               <div
                 className="
-                  rounded-xl
+                  rounded-lg
                   border
                   border-white/[0.06]
                   bg-white/[0.02]
-                  px-3
-                  py-2
-                  text-[9px]
+                  px-2.5
+                  py-1.5
+                  text-[8px]
                   font-black
                   uppercase
                   tracking-wider
@@ -2706,7 +2414,6 @@ export default function MapasClient({
                 {" · "}
                 {resultStatistics.encounters} encontros
               </div>
-
             </div>
 
             {/* FILTERS */}
@@ -2714,12 +2421,11 @@ export default function MapasClient({
             <div
               className="
                 sticky
-                top-[57px]
+                top-[45px]
                 z-30
-                mb-6
+                mb-4
               "
             >
-
               <FilterPanel
                 seasons={seasons}
                 selectedSeason={
@@ -2754,7 +2460,6 @@ export default function MapasClient({
                   activeFilters
                 }
               />
-
             </div>
 
             {/* MAPS */}
@@ -2776,10 +2481,8 @@ export default function MapasClient({
                 locationSearch
               }
             />
-
           </>
         )}
-
       </section>
 
       {/* ===================================================
@@ -2788,24 +2491,22 @@ export default function MapasClient({
 
       <footer
         className="
-          mt-10
+          mt-8
           border-t
           border-white/[0.06]
           bg-[#060806]
         "
       >
-
         <div
           className="
             mx-auto
             max-w-[1400px]
             px-5
-            py-8
+            py-7
             sm:px-6
             lg:px-8
           "
         >
-
           <p className="text-sm font-bold text-white">
             neverTakeBan
           </p>
@@ -2813,11 +2514,8 @@ export default function MapasClient({
           <p className="mt-1 text-xs text-gray-600">
             Banco de mapas e encontros do PokeMMO.
           </p>
-
         </div>
-
       </footer>
-
     </main>
   );
 }
