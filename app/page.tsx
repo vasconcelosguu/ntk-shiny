@@ -40,6 +40,7 @@ export default function Home() {
         </div>
       </section>
 
+
       {/* =====================================================
           HERO
       ===================================================== */}
@@ -55,10 +56,63 @@ export default function Home() {
           "
         />
 
+        <div
+          className="
+            relative
+            mx-auto
+            max-w-7xl
+            px-5
+            py-12
+            sm:px-6
+          "
+        >
+
+          <p
+            className="
+              text-[10px]
+              font-bold
+              uppercase
+              tracking-[0.2em]
+              text-lime-400
+            "
+          >
+            neverTakeBan
+          </p>
+
+          <h1
+            className="
+              mt-3
+              text-4xl
+              font-black
+              tracking-tight
+              text-white
+              md:text-5xl
+            "
+          >
+            PokeMMO Team
+          </h1>
+
+          <p
+            className="
+              mt-3
+              max-w-2xl
+              text-sm
+              leading-6
+              text-gray-500
+              md:text-base
+            "
+          >
+            Guias, estratégias, farms, hunts, raids, mapas e
+            informações utilizadas pelo time.
+          </p>
+
+        </div>
+
       </section>
 
+
       {/* =====================================================
-          CATEGORIAS
+          CONTEÚDO
       ===================================================== */}
 
       <section
@@ -71,7 +125,9 @@ export default function Home() {
         "
       >
 
-        {/* SECTION HEADER */}
+        {/* ===================================================
+            HEADER
+        =================================================== */}
 
         <div className="mb-7">
 
@@ -100,12 +156,15 @@ export default function Home() {
           </h2>
 
           <p className="mt-1 text-sm text-gray-500">
-            Clique em uma categoria para visualizar suas áreas.
+            Guias, ferramentas e informações para o PokeMMO.
           </p>
 
         </div>
 
-        {/* CATEGORIES */}
+
+        {/* ===================================================
+            CATEGORIAS
+        =================================================== */}
 
         <div className="space-y-3">
 
@@ -115,6 +174,7 @@ export default function Home() {
               openCategory === category.slug;
 
             return (
+
               <section
                 key={category.slug}
                 className={[
@@ -127,9 +187,7 @@ export default function Home() {
                 ].join(" ")}
               >
 
-                {/* =================================================
-                    CATEGORY HEADER
-                ================================================= */}
+                {/* CATEGORY HEADER */}
 
                 <div className="flex items-center">
 
@@ -150,8 +208,6 @@ export default function Home() {
                     "
                   >
 
-                    {/* ICON */}
-
                     <div
                       className={[
                         "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border text-2xl",
@@ -165,7 +221,6 @@ export default function Home() {
                       {category.icon}
                     </div>
 
-                    {/* TEXT */}
 
                     <div className="min-w-0">
 
@@ -196,13 +251,8 @@ export default function Home() {
 
                   </button>
 
-                  {/* =================================================
-                      RIGHT SIDE
-                  ================================================= */}
 
                   <div className="flex items-center gap-2 pr-5">
-
-                    {/* OPEN PAGE */}
 
                     <Link
                       href={`/${category.slug}`}
@@ -225,8 +275,6 @@ export default function Home() {
                     >
                       Abrir
                     </Link>
-
-                    {/* ARROW */}
 
                     <button
                       type="button"
@@ -254,9 +302,8 @@ export default function Home() {
 
                 </div>
 
-                {/* =================================================
-                    ANIMATED CONTENT
-                ================================================= */}
+
+                {/* CHANNELS */}
 
                 <div
                   className={[
@@ -283,8 +330,6 @@ export default function Home() {
                           : "-translate-y-3",
                       ].join(" ")}
                     >
-
-                      {/* CHANNELS */}
 
                       {category.channels.length > 0 ? (
 
@@ -397,7 +442,7 @@ export default function Home() {
                                     group-hover:text-lime-400
                                   "
                                 >
-                                  Ver estratégia
+                                  Ver conteúdo
                                 </div>
 
                               </Link>
@@ -408,8 +453,6 @@ export default function Home() {
                         </div>
 
                       ) : (
-
-                        /* EMPTY */
 
                         <div
                           className="
@@ -458,8 +501,267 @@ export default function Home() {
                 </div>
 
               </section>
+
             );
+
           })}
+
+
+          {/* ===================================================
+              MAPAS
+              ÁREA INDEPENDENTE
+          =================================================== */}
+
+          <section
+            className="
+              overflow-hidden
+              rounded-2xl
+              border
+              border-lime-400/15
+              bg-[#0b0f0b]
+              transition-all
+              duration-300
+              hover:border-lime-400/30
+              hover:shadow-2xl
+              hover:shadow-lime-950/10
+            "
+          >
+
+            <div className="flex items-center">
+
+              <div
+                className="
+                  flex
+                  min-w-0
+                  flex-1
+                  items-center
+                  gap-4
+                  p-5
+                "
+              >
+
+                <div
+                  className="
+                    flex
+                    h-12
+                    w-12
+                    shrink-0
+                    items-center
+                    justify-center
+                    rounded-xl
+                    border
+                    border-lime-400/20
+                    bg-lime-400/10
+                    text-2xl
+                  "
+                >
+                  🗺️
+                </div>
+
+                <div className="min-w-0">
+
+                  <h3 className="text-lg font-black text-white">
+                    Mapas
+                  </h3>
+
+                  <p className="mt-1 truncate text-sm text-gray-500">
+                    Rotas, Pokémon, encontros, métodos, níveis e
+                    informações dos mapas do PokeMMO.
+                  </p>
+
+                </div>
+
+              </div>
+
+
+              <div className="pr-5">
+
+                <Link
+                  href="/mapas"
+                  className="
+                    inline-flex
+                    items-center
+                    gap-2
+                    rounded-lg
+                    border
+                    border-lime-400/20
+                    bg-lime-400/[0.06]
+                    px-4
+                    py-2
+                    text-xs
+                    font-bold
+                    text-gray-400
+                    transition
+                    hover:border-lime-400/40
+                    hover:bg-lime-400/10
+                    hover:text-lime-400
+                  "
+                >
+                  Abrir
+                  <span>→</span>
+                </Link>
+
+              </div>
+
+            </div>
+
+          </section>
+
+
+          {/* ===================================================
+              RAIDS
+              ÁREA INDEPENDENTE
+          =================================================== */}
+
+          <section
+            className="
+              overflow-hidden
+              rounded-2xl
+              border
+              border-lime-400/15
+              bg-[#0b0f0b]
+              transition-all
+              duration-300
+              hover:border-lime-400/30
+              hover:shadow-2xl
+              hover:shadow-lime-950/10
+            "
+          >
+
+            <div className="flex items-center">
+
+              <div
+                className="
+                  flex
+                  min-w-0
+                  flex-1
+                  items-center
+                  gap-4
+                  p-5
+                "
+              >
+
+                <div
+                  className="
+                    flex
+                    h-12
+                    w-12
+                    shrink-0
+                    items-center
+                    justify-center
+                    rounded-xl
+                    border
+                    border-lime-400/20
+                    bg-lime-400/10
+                    text-2xl
+                  "
+                >
+                  ⚔️
+                </div>
+
+                <div className="min-w-0">
+
+                  <h3 className="text-lg font-black text-white">
+                    Raids
+                  </h3>
+
+                  <p className="mt-1 truncate text-sm text-gray-500">
+                    Builds e estratégias para os Raids do PokeMMO.
+                  </p>
+
+                </div>
+
+              </div>
+
+
+              <div className="pr-5">
+
+                <Link
+                  href="/raid"
+                  className="
+                    inline-flex
+                    items-center
+                    gap-2
+                    rounded-lg
+                    border
+                    border-lime-400/20
+                    bg-lime-400/[0.06]
+                    px-4
+                    py-2
+                    text-xs
+                    font-bold
+                    text-gray-400
+                    transition
+                    hover:border-lime-400/40
+                    hover:bg-lime-400/10
+                    hover:text-lime-400
+                  "
+                >
+                  Abrir
+                  <span>→</span>
+                </Link>
+
+              </div>
+
+            </div>
+
+          </section>
+
+        </div>
+
+      </section>
+
+
+      {/* =====================================================
+          FOOTER
+      ===================================================== */}
+
+      <section
+        className="
+          border-t
+          border-white/[0.06]
+          bg-[#080c08]
+        "
+      >
+
+        <div
+          className="
+            mx-auto
+            max-w-7xl
+            px-5
+            py-8
+            sm:px-6
+          "
+        >
+
+          <div
+            className="
+              flex
+              flex-col
+              gap-3
+              sm:flex-row
+              sm:items-center
+              sm:justify-between
+            "
+          >
+
+            <div>
+
+              <p className="text-sm font-bold text-white">
+                neverTakeBan
+              </p>
+
+              <p className="mt-1 text-xs text-gray-600">
+                PokeMMO Team
+              </p>
+
+            </div>
+
+            <p className="text-xs text-gray-700">
+              Guias, estratégias, mapas e informações do time.
+            </p>
+
+          </div>
 
         </div>
 
