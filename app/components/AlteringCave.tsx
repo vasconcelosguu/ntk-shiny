@@ -15,6 +15,66 @@ type CaveData = {
   updatedAt: string;
 };
 
+// --- MINI-COMPONENTE PARA CARREGAR A SPRITE DA POKEAPI ---
+
+function PokemonSprite({ name }: { name: string }) {
+  const [spriteUrl, setSpriteUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchSprite() {
+      try {
+        const formattedName = name
+          .toLowerCase()
+          .trim()
+          .replace(/\./g, "")
+          .replace(/\s+/g, "-");
+
+        // URL CORRETA DA POKEAPI
+        const response = await fetch(
+          `https://pokeapi.co/api/v2/pokemon/${formattedName}`
+        );
+
+        if (!response.ok) {
+          throw new Error(
+            `Pokémon não encontrado: ${formattedName}`
+          );
+        }
+
+        const data = await response.json();
+
+        // Sprite frontal padrão
+        if (data?.sprites?.front_default) {
+          setSpriteUrl(data.sprites.front_default);
+        }
+      } catch (error) {
+        console.error(
+          `Erro ao buscar sprite de ${name}:`,
+          error
+        );
+      }
+    }
+
+    if (name) {
+      fetchSprite();
+    }
+  }, [name]);
+
+  if (!spriteUrl) {
+    return (
+      <div className="h-6 w-6 flex-shrink-0 rounded bg-white/[0.05]" />
+    );
+  }
+
+  return (
+    <img
+      src={spriteUrl}
+      alt={name}
+      className="h-7 w-7 flex-shrink-0 object-contain pixelated"
+      loading="lazy"
+    />
+  );
+}
+
 export default function AlteringCave() {
   const [data, setData] = useState<CaveData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -43,6 +103,8 @@ export default function AlteringCave() {
     load();
   }, []);
 
+  // --- LOADING ---
+
   if (loading) {
     return (
       <div className="rounded-2xl border border-lime-400/15 bg-[#0b0f0b] p-5">
@@ -52,6 +114,8 @@ export default function AlteringCave() {
       </div>
     );
   }
+
+  // --- ERRO ---
 
   if (!data) {
     return (
@@ -63,8 +127,12 @@ export default function AlteringCave() {
     );
   }
 
+  // --- CONTEÚDO ---
+
   return (
     <div className="rounded-2xl border border-lime-400/15 bg-[#0b0f0b] p-5">
+      {/* HEADER */}
+
       <div className="flex items-center justify-between">
         <div>
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-lime-400">
@@ -80,6 +148,8 @@ export default function AlteringCave() {
           Google Sheets
         </span>
       </div>
+
+      {/* SEÇÕES */}
 
       <div className="mt-5 grid gap-4 md:grid-cols-3">
         <CaveSection
@@ -101,6 +171,8 @@ export default function AlteringCave() {
   );
 }
 
+// --- SEÇÃO DA CAVERNA ---
+
 function CaveSection({
   title,
   entries,
@@ -110,6 +182,8 @@ function CaveSection({
 }) {
   return (
     <div className="rounded-xl border border-white/[0.06] bg-[#070a07] p-4">
+      {/* TÍTULO */}
+
       <div className="flex items-center justify-between">
         <h3 className="font-bold text-white">
           {title}
@@ -119,6 +193,8 @@ function CaveSection({
           {entries.length}
         </span>
       </div>
+
+      {/* LISTA */}
 
       <div className="mt-3 space-y-2">
         {entries.length === 0 ? (
@@ -138,14 +214,24 @@ function CaveSection({
                 border-white/[0.04]
                 bg-white/[0.02]
                 px-3
-                py-2
+                py-1.5
               "
             >
-              <span className="text-sm text-gray-300">
-                {entry.pokemon}
-              </span>
+              {/* SPRITE + NOME */}
 
-              <span className="text-xs font-bold text-lime-400">
+              <div className="flex items-center gap-2 overflow-hidden">
+                <PokemonSprite
+                  name={entry.pokemon}
+                />
+
+                <span className="truncate text-sm text-gray-300">
+                  {entry.pokemon}
+                </span>
+              </div>
+
+              {/* TIER */}
+
+              <span className="flex-shrink-0 text-xs font-bold text-lime-400">
                 {entry.tier}
               </span>
             </div>

@@ -4,9 +4,9 @@ import Link from "next/link";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "neverTakeBan • PokeMMO Team",
+  title: "NeverTakeBan",
   description:
-    "Portal do time neverTakeBan no PokeMMO.",
+    "Time NeverTakeBan",
 };
 
 export default function RootLayout({
