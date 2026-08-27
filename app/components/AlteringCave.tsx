@@ -30,23 +30,31 @@ type GameTime = {
 function getPokeMMOTime(): GameTime {
   const now = new Date();
 
-  const realDayDuration = 6 * 60 * 60 * 1000;
+  const realDayDuration =
+    6 * 60 * 60 * 1000;
 
-  const utcMilliseconds = now.getTime();
+  const utcMilliseconds =
+    now.getTime();
 
   const timeIntoGameDay =
-    ((utcMilliseconds % realDayDuration) + realDayDuration) %
+    ((utcMilliseconds % realDayDuration) +
+      realDayDuration) %
     realDayDuration;
 
   // 6 horas reais = 24 horas do jogo
-  const gameMilliseconds = timeIntoGameDay * 4;
+  const gameMilliseconds =
+    timeIntoGameDay * 4;
 
-  const totalGameMinutes = Math.floor(
-    gameMilliseconds / (60 * 1000)
-  );
+  const totalGameMinutes =
+    Math.floor(
+      gameMilliseconds /
+        (60 * 1000)
+    );
 
   const hour =
-    Math.floor(totalGameMinutes / 60) % 24;
+    Math.floor(
+      totalGameMinutes / 60
+    ) % 24;
 
   const minute =
     totalGameMinutes % 60;
@@ -55,30 +63,59 @@ function getPokeMMOTime(): GameTime {
   // PERÍODO
   // ----------------------------------------------------------
 
-  let period: "Morning" | "Day" | "Night";
+  let period:
+    | "Morning"
+    | "Day"
+    | "Night";
 
   if (hour >= 4 && hour < 10) {
     period = "Morning";
-  } else if (hour >= 10 && hour < 21) {
+  } else if (
+    hour >= 10 &&
+    hour < 21
+  ) {
     period = "Day";
   } else {
     period = "Night";
   }
 
   // ----------------------------------------------------------
-  // ESTAÇÃO
+  // ESTAÇÃO / ROTAÇÃO SEMANAL
   // ----------------------------------------------------------
 
-  const month = now.getUTCMonth();
-
   const seasons = [
-    "Spring",
     "Summer",
     "Autumn",
     "Winter",
-  ];
+    "Spring",
+  ] as const;
 
-  const season = seasons[month % 4];
+  // 01/08/2026 00:00 UTC = Summer
+  const seasonStart = Date.UTC(
+    2026,
+    7,
+    1,
+    0,
+    0,
+    0
+  );
+
+  const millisecondsPerWeek =
+    7 * 24 * 60 * 60 * 1000;
+
+  const elapsed =
+    now.getTime() - seasonStart;
+
+  const weekIndex = Math.floor(
+    elapsed / millisecondsPerWeek
+  );
+
+  const season =
+    seasons[
+      ((weekIndex % seasons.length) +
+        seasons.length) %
+        seasons.length
+    ];
 
   // ----------------------------------------------------------
   // DIA
@@ -94,7 +131,8 @@ function getPokeMMOTime(): GameTime {
     "Saturday",
   ];
 
-  const dayName = days[now.getUTCDay()];
+  const dayName =
+    days[now.getUTCDay()];
 
   return {
     hour,
@@ -103,78 +141,6 @@ function getPokeMMOTime(): GameTime {
     season,
     period,
   };
-}
-
-// ============================================================
-// GAME CLOCK
-// ============================================================
-
-function PokeMMOClockCard() {
-  const [gameTime, setGameTime] = useState<GameTime>(
-    getPokeMMOTime()
-  );
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setGameTime(getPokeMMOTime());
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  const hour = String(gameTime.hour).padStart(2, "0");
-  const minute = String(gameTime.minute).padStart(2, "0");
-
-  let icon = "🌙";
-
-  if (gameTime.period === "Morning") {
-    icon = "🌅";
-  }
-
-  if (gameTime.period === "Day") {
-    icon = "☀️";
-  }
-
-  return (
-    <div className="relative flex min-h-[245px] flex-col items-center justify-between overflow-hidden rounded-[24px] border-2 border-lime-400/80 bg-black px-5 py-4 text-center">
-
-      {/* TÍTULO */}
-
-      <h3 className="text-[20px] font-black uppercase leading-tight text-white">
-        Horário no
-        <br />
-        PokeMMO
-      </h3>
-
-      {/* ÍCONE */}
-
-      <div className="text-4xl">
-        {icon}
-      </div>
-
-      {/* HORÁRIO */}
-
-      <div className="text-[27px] font-black tracking-tight text-white">
-        {hour}:{minute}
-      </div>
-
-      {/* DIA / ESTAÇÃO */}
-
-      <div className="text-[13px] font-bold uppercase text-gray-300">
-        {gameTime.dayName}
-        <span className="mx-1 text-lime-400">
-          •
-        </span>
-        {gameTime.season}
-      </div>
-
-      {/* PERÍODO */}
-
-      <div className="text-[11px] font-black uppercase tracking-widest text-lime-400">
-        {gameTime.period}
-      </div>
-    </div>
-  );
 }
 
 // ============================================================
@@ -258,15 +224,15 @@ function PokemonSprite({
       loading="lazy"
       className={
         size === "large"
-          ? "h-24 w-24 object-contain pixelated"
-          : "h-12 w-12 object-contain pixelated"
+          ? "h-24 w-24 object-contain"
+          : "h-12 w-12 object-contain"
       }
     />
   );
 }
 
 // ============================================================
-// CARD PRINCIPAL - ALTERING CAVE
+// ALTERING CAVE CARD
 // ============================================================
 
 function AlteringCaveCard({
@@ -277,35 +243,84 @@ function AlteringCaveCard({
   const visiblePokemon = entries.slice(0, 3);
 
   return (
-    <div className="relative flex min-h-[245px] flex-col items-center overflow-hidden rounded-[24px] border-2 border-lime-400/80 bg-black px-4 py-3">
-
-      <h3 className="text-[20px] font-black uppercase leading-tight text-white">
+    <div
+      className="
+        relative
+        flex
+        min-h-[245px]
+        flex-col
+        items-center
+        overflow-hidden
+        rounded-[24px]
+        border-2
+        border-lime-400/80
+        bg-black
+        px-4
+        py-3
+      "
+    >
+      <h3
+        className="
+          text-[20px]
+          font-black
+          uppercase
+          leading-tight
+          text-white
+        "
+      >
         Altering
         <br />
         Cave
       </h3>
 
-      <div className="mt-2 flex flex-1 items-center justify-center gap-1">
-        {visiblePokemon.map(
-          (pokemon, index) => (
-            <div
-              key={`${pokemon.pokemon}-${index}`}
-              className="flex flex-col items-center"
-            >
-              <PokemonSprite
-                name={pokemon.pokemon}
-                size="large"
-              />
+      <div
+        className="
+          mt-2
+          flex
+          flex-1
+          items-center
+          justify-center
+          gap-1
+        "
+      >
+        {visiblePokemon.map((pokemon, index) => (
+          <div
+            key={`${pokemon.pokemon}-${index}`}
+            className="
+              flex
+              flex-col
+              items-center
+            "
+          >
+            <PokemonSprite
+              name={pokemon.pokemon}
+              size="large"
+            />
 
-              <span className="max-w-[90px] truncate text-[10px] font-bold text-gray-300">
-                {pokemon.pokemon}
-              </span>
-            </div>
-          )
-        )}
+            <span
+              className="
+                max-w-[90px]
+                truncate
+                text-[10px]
+                font-bold
+                text-gray-300
+              "
+            >
+              {pokemon.pokemon}
+            </span>
+          </div>
+        ))}
       </div>
 
-      <div className="mt-2 text-[16px] font-black uppercase text-white">
+      <div
+        className="
+          mt-2
+          text-[16px]
+          font-black
+          uppercase
+          text-white
+        "
+      >
         HORDA {entries.length}X
       </div>
     </div>
@@ -313,13 +328,12 @@ function AlteringCaveCard({
 }
 
 // ============================================================
-// CARD ESTAÇÃO
+// SEASON CARD
 // ============================================================
 
 function SeasonCard() {
-  const [gameTime, setGameTime] = useState<GameTime>(
-    getPokeMMOTime()
-  );
+  const [gameTime, setGameTime] =
+    useState<GameTime>(getPokeMMOTime());
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -329,10 +343,43 @@ function SeasonCard() {
     return () => clearInterval(interval);
   }, []);
 
-  return (
-    <div className="relative flex min-h-[245px] flex-col items-center justify-between overflow-hidden rounded-[24px] border-2 border-lime-400/80 bg-black px-4 py-4 text-center">
+  const seasonIcon =
+    gameTime.season === "Spring"
+      ? "🌸"
+      : gameTime.season === "Summer"
+        ? "☀️"
+        : gameTime.season === "Autumn"
+          ? "🍂"
+          : "❄️";
 
-      <h3 className="text-[18px] font-black uppercase leading-tight text-white">
+  return (
+    <div
+      className="
+        relative
+        flex
+        min-h-[245px]
+        flex-col
+        items-center
+        justify-between
+        overflow-hidden
+        rounded-[24px]
+        border-2
+        border-lime-400/80
+        bg-black
+        px-4
+        py-4
+        text-center
+      "
+    >
+      <h3
+        className="
+          text-[18px]
+          font-black
+          uppercase
+          leading-tight
+          text-white
+        "
+      >
         Estação /
         <br />
         Rotação
@@ -340,21 +387,30 @@ function SeasonCard() {
 
       <div className="flex flex-col items-center">
         <div className="text-6xl">
-          {gameTime.season === "Spring"
-            ? "🌸"
-            : gameTime.season === "Summer"
-              ? "☀️"
-              : gameTime.season === "Autumn"
-                ? "🍂"
-                : "❄️"}
+          {seasonIcon}
         </div>
 
-        <div className="mt-2 text-[22px] font-black uppercase text-white">
+        <div
+          className="
+            mt-2
+            text-[22px]
+            font-black
+            uppercase
+            text-white
+          "
+        >
           {gameTime.season}
         </div>
       </div>
 
-      <div className="text-[13px] font-bold uppercase text-gray-400">
+      <div
+        className="
+          text-[13px]
+          font-bold
+          uppercase
+          text-gray-400
+        "
+      >
         Altering Cave
       </div>
     </div>
@@ -362,32 +418,76 @@ function SeasonCard() {
 }
 
 // ============================================================
-// CARD ALPHA
+// ALPHA CARD
 // ============================================================
 
 function AlphaCard() {
   return (
-    <div className="relative flex min-h-[245px] flex-col items-center justify-between overflow-hidden rounded-[24px] border-2 border-lime-400/80 bg-black px-4 py-4 text-center">
-
-      <h3 className="text-[19px] font-black uppercase leading-tight text-white">
+    <div
+      className="
+        relative
+        flex
+        min-h-[245px]
+        flex-col
+        items-center
+        justify-between
+        overflow-hidden
+        rounded-[24px]
+        border-2
+        border-lime-400/80
+        bg-black
+        px-4
+        py-4
+        text-center
+      "
+    >
+      <h3
+        className="
+          text-[19px]
+          font-black
+          uppercase
+          leading-tight
+          text-white
+        "
+      >
         Horários
         <br />
         de Alfa
       </h3>
 
-      <div className="flex flex-1 flex-col items-center justify-center">
-
+      <div
+        className="
+          flex
+          flex-1
+          flex-col
+          items-center
+          justify-center
+        "
+      >
         <div className="text-6xl">
           👑
         </div>
 
-        <div className="mt-4 text-[20px] font-black text-white">
+        <div
+          className="
+            mt-4
+            text-[20px]
+            font-black
+            text-white
+          "
+        >
           EM BREVE
         </div>
-
       </div>
 
-      <div className="text-[12px] font-bold uppercase text-gray-500">
+      <div
+        className="
+          text-[12px]
+          font-bold
+          uppercase
+          text-gray-500
+        "
+      >
         Horários dos Alfas
       </div>
     </div>
@@ -395,125 +495,140 @@ function AlphaCard() {
 }
 
 // ============================================================
-// DROPDOWN
+// POKEMMO CLOCK CARD
 // ============================================================
 
-function CaveDropdown({
-  title,
-  entries,
-}: {
-  title: string;
-  entries: CaveEntry[];
-}) {
-  const [open, setOpen] =
-    useState(false);
+function PokeMMOClockCard() {
+  const [gameTime, setGameTime] =
+    useState<GameTime>(getPokeMMOTime());
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setGameTime(getPokeMMOTime());
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const hour = String(gameTime.hour).padStart(2, "0");
+  const minute = String(gameTime.minute).padStart(2, "0");
+
+  let icon = "🌙";
+
+  if (gameTime.period === "Morning") {
+    icon = "🌅";
+  }
+
+  if (gameTime.period === "Day") {
+    icon = "☀️";
+  }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-white/[0.08] bg-[#070a07]">
-
-      <button
-        type="button"
-        onClick={() =>
-          setOpen((value) => !value)
-        }
+    <div
+      className="
+        relative
+        flex
+        min-h-[245px]
+        flex-col
+        items-center
+        justify-between
+        overflow-hidden
+        rounded-[24px]
+        border-2
+        border-lime-400/80
+        bg-black
+        px-5
+        py-4
+        text-center
+      "
+    >
+      <h3
         className="
-          flex
-          w-full
-          items-center
-          justify-between
-          px-5
-          py-4
-          text-left
-          transition
-          hover:bg-white/[0.03]
+          text-[20px]
+          font-black
+          uppercase
+          leading-tight
+          text-white
         "
       >
-        <div className="flex items-center gap-3">
+        Horário no
+        <br />
+        PokeMMO
+      </h3>
 
-          <span className="text-base font-black text-white">
-            {title}
-          </span>
+      <div className="text-4xl">
+        {icon}
+      </div>
 
-          <span className="rounded-md bg-white/[0.05] px-2 py-0.5 text-[11px] font-bold text-gray-500">
-            {entries.length}
-          </span>
+      <div
+        className="
+          text-[27px]
+          font-black
+          tracking-tight
+          text-white
+        "
+      >
+        {hour}:{minute}
+      </div>
 
-        </div>
+      <div
+        className="
+          text-[13px]
+          font-bold
+          uppercase
+          text-gray-300
+        "
+      >
+        {gameTime.dayName}
 
-        <svg
-          className={`h-5 w-5 text-gray-500 transition-transform duration-200 ${
-            open ? "rotate-180" : ""
-          }`}
-          viewBox="0 0 20 20"
-          fill="currentColor"
-        >
-          <path
-            fillRule="evenodd"
-            d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.51a.75.75 0 01-1.08 0l-4.25-4.51a.75.75 0 01.02-1.06z"
-            clipRule="evenodd"
-          />
-        </svg>
+        <span className="mx-1 text-lime-400">
+          •
+        </span>
 
-      </button>
+        {gameTime.season}
+      </div>
 
-      {open && (
-        <div className="border-t border-white/[0.05] p-4">
-
-          {entries.length === 0 ? (
-            <p className="text-sm text-gray-600">
-              Nenhum Pokémon encontrado.
-            </p>
-          ) : (
-            <div className="space-y-2">
-              {entries.map(
-                (entry, index) => (
-                  <div
-                    key={`${entry.pokemon}-${index}`}
-                    className="
-                      flex
-                      min-h-[65px]
-                      items-center
-                      justify-between
-                      rounded-xl
-                      border
-                      border-white/[0.04]
-                      bg-white/[0.02]
-                      px-4
-                    "
-                  >
-
-                    <div className="flex items-center gap-3">
-                      <PokemonSprite
-                        name={entry.pokemon}
-                        size="small"
-                      />
-
-                      <span className="text-sm font-medium text-gray-300">
-                        {entry.pokemon}
-                      </span>
-                    </div>
-
-                    <span className="text-sm font-black text-lime-400">
-                      {entry.tier}
-                    </span>
-
-                  </div>
-                )
-              )}
-            </div>
-          )}
-
-        </div>
-      )}
+      <div
+        className="
+          text-[11px]
+          font-black
+          uppercase
+          tracking-widest
+          text-lime-400
+        "
+      >
+        {gameTime.period}
+      </div>
     </div>
   );
 }
 
 // ============================================================
-// COMPONENTE PRINCIPAL
+// BUSCAR DADOS
 // ============================================================
 
-export default function AlteringCave() {
+async function getCaveData(): Promise<CaveData> {
+  const response = await fetch(
+    "/api/altering-cave",
+    {
+      cache: "no-store",
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      "Erro ao carregar Altering Cave"
+    );
+  }
+
+  return response.json();
+}
+
+// ============================================================
+// COMPONENTE DO TOPO
+// ============================================================
+
+export function AlteringCave() {
   const [data, setData] =
     useState<CaveData | null>(null);
 
@@ -523,21 +638,7 @@ export default function AlteringCave() {
   useEffect(() => {
     async function load() {
       try {
-        const response = await fetch(
-          "/api/altering-cave",
-          {
-            cache: "no-store",
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error(
-            "Erro ao carregar Altering Cave"
-          );
-        }
-
-        const result: CaveData =
-          await response.json();
+        const result = await getCaveData();
 
         setData(result);
       } catch (error) {
@@ -553,13 +654,17 @@ export default function AlteringCave() {
     load();
   }, []);
 
-  // ==========================================================
-  // LOADING
-  // ==========================================================
-
   if (loading) {
     return (
-      <div className="rounded-2xl border border-lime-400/15 bg-[#0b0f0b] p-5">
+      <div
+        className="
+          rounded-2xl
+          border
+          border-lime-400/15
+          bg-[#0b0f0b]
+          p-5
+        "
+      >
         <p className="text-sm text-gray-500">
           Carregando Altering Cave...
         </p>
@@ -567,60 +672,105 @@ export default function AlteringCave() {
     );
   }
 
-  // ==========================================================
-  // ERRO
-  // ==========================================================
-
   if (!data) {
     return (
-      <div className="rounded-2xl border border-red-500/15 bg-[#0b0f0b] p-5">
+      <div
+        className="
+          rounded-2xl
+          border
+          border-red-500/15
+          bg-[#0b0f0b]
+          p-5
+        "
+      >
         <p className="text-sm text-red-400">
-          Não foi possível carregar os dados
-          do Altering Cave.
+          Não foi possível carregar os
+          dados do Altering Cave.
         </p>
       </div>
     );
   }
 
-  // ==========================================================
-  // CONTEÚDO
-  // ==========================================================
-
   return (
-    <div className="rounded-2xl border border-lime-400/15 bg-[#0b0f0b] p-5">
-
+    <div
+      className="
+        rounded-2xl
+        border
+        border-lime-400/15
+        bg-[#0b0f0b]
+        p-5
+      "
+    >
       {/* HEADER */}
 
-      <div className="mb-5 flex items-center justify-between">
-
+      <div
+        className="
+          mb-5
+          flex
+          items-center
+          justify-between
+        "
+      >
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-lime-400">
+          <p
+            className="
+              text-[10px]
+              font-bold
+              uppercase
+              tracking-[0.2em]
+              text-lime-400
+            "
+          >
             Dados em tempo real
           </p>
 
-          <h2 className="mt-1 text-2xl font-black text-white">
-            {data.title}
+          <h2
+            className="
+              mt-1
+              text-2xl
+              font-black
+              text-white
+            "
+          >
+            Atualizaçoes mais recentes
           </h2>
         </div>
 
-        <span className="rounded-lg border border-lime-400/10 bg-lime-400/5 px-3 py-1 text-xs text-gray-500">
+        <a
+          href="https://docs.google.com/spreadsheets/d/12lZupylxLAKUVQQJZIC8GJmvQiUwpbAAQ3BduAu_rig/htmlview?gid=1031347870"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="
+            rounded-lg
+            border
+            border-lime-400/20
+            bg-lime-400/5
+            px-3
+            py-1
+            text-xs
+            text-gray-400
+            transition
+            hover:border-lime-400/40
+            hover:text-lime-400
+          "
+        >
           Google Sheets
-        </span>
-
+        </a>
       </div>
 
       {/* =====================================================
-          CARDS
-      ====================================================== */}
+          4 CARDS DO TOPO
+      ===================================================== */}
 
-      <div className="
-        grid
-        grid-cols-1
-        gap-4
-        sm:grid-cols-2
-        xl:grid-cols-4
-      ">
-
+      <div
+        className="
+          grid
+          grid-cols-1
+          gap-4
+          sm:grid-cols-2
+          xl:grid-cols-4
+        "
+      >
         <AlteringCaveCard
           entries={data.hordes}
         />
@@ -630,98 +780,414 @@ export default function AlteringCave() {
         <AlphaCard />
 
         <PokeMMOClockCard />
+      </div>
+    </div>
+  );
+}
 
+// ============================================================
+// ENCONTROS ATUAIS
+// ============================================================
+
+export function AlteringCaveEncounters() {
+  const [data, setData] =
+    useState<CaveData | null>(null);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const result = await getCaveData();
+
+        setData(result);
+      } catch (error) {
+        console.error(
+          "[ALTERING CAVE ENCOUNTERS]",
+          error
+        );
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    load();
+  }, []);
+
+  if (loading) {
+    return (
+      <div
+        className="
+          rounded-2xl
+          border
+          border-white/[0.07]
+          bg-[#0b0f0b]
+          p-5
+        "
+      >
+        <p className="text-sm text-gray-500">
+          Carregando encontros...
+        </p>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return null;
+  }
+
+  return (
+    <section
+      className="
+        overflow-hidden
+        rounded-2xl
+        border
+        border-lime-400/15
+        bg-[#0b0f0b]
+        transition-all
+        duration-300
+        hover:border-lime-400/30
+        hover:shadow-2xl
+        hover:shadow-lime-950/10
+      "
+    >
+      {/* HEADER */}
+
+      <div
+        className="
+          border-b
+          border-white/[0.06]
+          px-5
+          py-4
+        "
+      >
+        <p
+          className="
+            text-[10px]
+            font-bold
+            uppercase
+            tracking-[0.2em]
+            text-lime-400
+          "
+        >
+          Encontros atuais
+        </p>
+
+        <h3
+          className="
+            mt-1
+            text-xl
+            font-black
+            text-white
+          "
+        >
+          Altering Cave
+        </h3>
       </div>
 
       {/* =====================================================
-          HORDES
-      ====================================================== */}
+          3 CATEGORIAS
+      ===================================================== */}
 
-      <div className="mt-5 rounded-2xl border border-lime-400/10 bg-black/20 p-4">
+      <div
+        className="
+          grid
+          grid-cols-1
+          divide-y
+          divide-white/[0.06]
+          md:grid-cols-3
+          md:divide-x
+          md:divide-y-0
+        "
+      >
+        {/* HORDA */}
 
-        <div className="mb-3 flex items-center justify-between">
-
-          <div>
-            <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-lime-400">
-              Encontros atuais
-            </p>
-
-            <h3 className="text-lg font-black text-white">
+        <div className="p-5">
+          <div
+            className="
+              mb-4
+              flex
+              items-center
+              justify-between
+            "
+          >
+            <h4
+              className="
+                text-base
+                font-black
+                text-white
+              "
+            >
               Hordes
-            </h3>
+            </h4>
+
+            <span
+              className="
+                rounded-md
+                bg-lime-400/10
+                px-2
+                py-1
+                text-[10px]
+                font-black
+                text-lime-400
+              "
+            >
+              {data.hordes.length}
+            </span>
           </div>
 
-          <span className="text-xs font-bold text-gray-600">
-            {data.hordes.length} Pokémon
-          </span>
+          <div className="space-y-2">
+            {data.hordes.length === 0 ? (
+              <p className="text-sm text-gray-600">
+                Nenhum Pokémon.
+              </p>
+            ) : (
+              data.hordes.map((entry, index) => (
+                <div
+                  key={`${entry.pokemon}-horde-${index}`}
+                  className="
+                    flex
+                    items-center
+                    justify-between
+                    rounded-xl
+                    border
+                    border-white/[0.05]
+                    bg-black/30
+                    px-3
+                    py-2
+                  "
+                >
+                  <div
+                    className="
+                      flex
+                      items-center
+                      gap-3
+                    "
+                  >
+                    <PokemonSprite
+                      name={entry.pokemon}
+                      size="small"
+                    />
 
+                    <span
+                      className="
+                        text-sm
+                        font-bold
+                        text-gray-300
+                      "
+                    >
+                      {entry.pokemon}
+                    </span>
+                  </div>
+
+                  <span
+                    className="
+                      text-sm
+                      font-black
+                      text-lime-400
+                    "
+                  >
+                    {entry.tier}
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
         </div>
 
-        <div className="
-          grid
-          grid-cols-2
-          gap-3
-          sm:grid-cols-3
-          md:grid-cols-4
-          lg:grid-cols-5
-        ">
+        {/* SINGLES */}
 
-          {data.hordes.map(
-            (entry, index) => (
-              <div
-                key={`${entry.pokemon}-${index}`}
-                className="
-                  flex
-                  flex-col
-                  items-center
-                  rounded-xl
-                  border
-                  border-white/[0.05]
-                  bg-white/[0.02]
-                  px-3
-                  py-3
-                "
-              >
+        <div className="p-5">
+          <div
+            className="
+              mb-4
+              flex
+              items-center
+              justify-between
+            "
+          >
+            <h4
+              className="
+                text-base
+                font-black
+                text-white
+              "
+            >
+              Singles
+            </h4>
 
-                <PokemonSprite
-                  name={entry.pokemon}
-                  size="large"
-                />
+            <span
+              className="
+                rounded-md
+                bg-white/[0.05]
+                px-2
+                py-1
+                text-[10px]
+                font-black
+                text-gray-500
+              "
+            >
+              {data.singles.length}
+            </span>
+          </div>
 
-                <span className="mt-1 max-w-full truncate text-xs font-bold text-gray-300">
-                  {entry.pokemon}
-                </span>
+          <div className="space-y-2">
+            {data.singles.length === 0 ? (
+              <p className="text-sm text-gray-600">
+                Nenhum Pokémon.
+              </p>
+            ) : (
+              data.singles.map((entry, index) => (
+                <div
+                  key={`${entry.pokemon}-single-${index}`}
+                  className="
+                    flex
+                    items-center
+                    justify-between
+                    rounded-xl
+                    border
+                    border-white/[0.05]
+                    bg-black/30
+                    px-3
+                    py-2
+                  "
+                >
+                  <div
+                    className="
+                      flex
+                      items-center
+                      gap-3
+                    "
+                  >
+                    <PokemonSprite
+                      name={entry.pokemon}
+                      size="small"
+                    />
 
-                <span className="mt-1 text-[10px] font-black text-lime-400">
-                  {entry.tier}
-                </span>
+                    <span
+                      className="
+                        text-sm
+                        font-bold
+                        text-gray-300
+                      "
+                    >
+                      {entry.pokemon}
+                    </span>
+                  </div>
 
-              </div>
-            )
-          )}
-
+                  <span
+                    className="
+                      text-sm
+                      font-black
+                      text-lime-400
+                    "
+                  >
+                    {entry.tier}
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
         </div>
 
+        {/* RARE SINGLES */}
+
+        <div className="p-5">
+          <div
+            className="
+              mb-4
+              flex
+              items-center
+              justify-between
+            "
+          >
+            <h4
+              className="
+                text-base
+                font-black
+                text-white
+              "
+            >
+              Rare Singles
+            </h4>
+
+            <span
+              className="
+                rounded-md
+                bg-white/[0.05]
+                px-2
+                py-1
+                text-[10px]
+                font-black
+                text-gray-500
+              "
+            >
+              {data.rareSingles.length}
+            </span>
+          </div>
+
+          <div className="space-y-2">
+            {data.rareSingles.length === 0 ? (
+              <p className="text-sm text-gray-600">
+                Nenhum Pokémon.
+              </p>
+            ) : (
+              data.rareSingles.map(
+                (entry, index) => (
+                  <div
+                    key={`${entry.pokemon}-rare-${index}`}
+                    className="
+                      flex
+                      items-center
+                      justify-between
+                      rounded-xl
+                      border
+                      border-white/[0.05]
+                      bg-black/30
+                      px-3
+                      py-2
+                    "
+                  >
+                    <div
+                      className="
+                        flex
+                        items-center
+                        gap-3
+                      "
+                    >
+                      <PokemonSprite
+                        name={entry.pokemon}
+                        size="small"
+                      />
+
+                      <span
+                        className="
+                          text-sm
+                          font-bold
+                          text-gray-300
+                        "
+                      >
+                        {entry.pokemon}
+                      </span>
+                    </div>
+
+                    <span
+                      className="
+                        text-sm
+                        font-black
+                        text-lime-400
+                      "
+                    >
+                      {entry.tier}
+                    </span>
+                  </div>
+                )
+              )
+            )}
+          </div>
+        </div>
       </div>
-
-      {/* =====================================================
-          DROPDOWNS
-      ====================================================== */}
-
-      <div className="mt-4 space-y-2">
-
-        <CaveDropdown
-          title="Singles"
-          entries={data.singles}
-        />
-
-        <CaveDropdown
-          title="Rare Singles"
-          entries={data.rareSingles}
-        />
-
-      </div>
-
-    </div>
+    </section>
   );
 }

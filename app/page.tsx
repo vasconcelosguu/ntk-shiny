@@ -5,7 +5,11 @@ import Image from "next/image";
 import { useState } from "react";
 
 import { teamCategories } from "../lib/team";
-import AlteringCave from "./components/AlteringCave";
+
+import {
+  AlteringCave,
+  AlteringCaveEncounters,
+} from "./components/AlteringCave";
 
 export default function Home() {
   const [openCategory, setOpenCategory] = useState<string | null>(null);
@@ -18,14 +22,12 @@ export default function Home() {
 
   return (
     <main className="min-h-screen">
-
       {/* =====================================================
           BANNER
       ===================================================== */}
 
       <section className="home-banner-section">
         <div className="home-banner">
-
           <Image
             src="/images/home-banner.jpg"
             alt="neverTakeBan"
@@ -36,12 +38,12 @@ export default function Home() {
           />
 
           <div className="home-banner-overlay" />
-
         </div>
       </section>
 
       {/* =====================================================
           ALTERING CAVE
+          OS 4 CARDS CONTINUAM NO TOPO
       ===================================================== */}
 
       <section
@@ -56,7 +58,6 @@ export default function Home() {
         <AlteringCave />
       </section>
 
-
       {/* =====================================================
           CONTEÚDO
       ===================================================== */}
@@ -70,11 +71,9 @@ export default function Home() {
           sm:px-6
         "
       >
-
         {/* HEADER */}
 
         <div className="mb-7">
-
           <p
             className="
               text-[10px]
@@ -102,9 +101,7 @@ export default function Home() {
           <p className="mt-1 text-sm text-gray-500">
             Guias, ferramentas e informações para o PokeMMO.
           </p>
-
         </div>
-
 
         {/* ===================================================
             CATEGORIAS
@@ -112,10 +109,116 @@ export default function Home() {
 
         <div className="space-y-3">
 
-          {teamCategories.map((category) => {
+          {/* =================================================
+              ENCONTROS ATUAIS
+          ================================================= */}
 
-            const isOpen =
-              openCategory === category.slug;
+          <section
+            className="
+              overflow-hidden
+              rounded-2xl
+              border
+              border-white/[0.07]
+              bg-[#0b0f0b]
+              transition-all
+              duration-300
+              ease-out
+              hover:border-lime-400/20
+            "
+          >
+            <div className="flex items-center">
+              <div className="flex min-w-0 flex-1 items-center gap-4 p-5">
+                <div
+                  className="
+                    flex
+                    h-12
+                    w-12
+                    shrink-0
+                    items-center
+                    justify-center
+                    rounded-xl
+                    border
+                    border-lime-400/20
+                    bg-lime-400/10
+                    text-2xl
+                  "
+                >
+                  🐾
+                </div>
+
+                <div className="min-w-0">
+                  <h3 className="text-lg font-black text-white">
+                    Encontros atuais
+                  </h3>
+
+                  <p className="mt-1 truncate text-sm text-gray-500">
+                    Hordes, Singles e Rare Singles do Altering Cave.
+                  </p>
+                </div>
+              </div>
+
+              <div className="pr-5">
+                <button
+                  type="button"
+                  aria-label="Abrir Encontros atuais"
+                  onClick={() =>
+                    setOpenCategory((current) =>
+                      current === "altering-cave"
+                        ? null
+                        : "altering-cave"
+                    )
+                  }
+                  className={[
+                    "flex h-9 w-9 items-center justify-center rounded-lg border",
+                    "border-white/[0.07]",
+                    "bg-white/[0.025]",
+                    "text-gray-500",
+                    "transition-all duration-300",
+                    "hover:border-lime-400/30",
+                    "hover:text-lime-400",
+                    openCategory === "altering-cave"
+                      ? "rotate-180"
+                      : "rotate-0",
+                  ].join(" ")}
+                >
+                  ↓
+                </button>
+              </div>
+            </div>
+
+            <div
+              className={[
+                "grid transition-[grid-template-rows,opacity]",
+                "duration-500",
+                "ease-[cubic-bezier(0.22,1,0.36,1)]",
+                openCategory === "altering-cave"
+                  ? "grid-rows-[1fr] opacity-100"
+                  : "grid-rows-[0fr] opacity-0",
+              ].join(" ")}
+            >
+              <div className="min-h-0 overflow-hidden">
+                <div
+                  className={[
+                    "border-t border-white/[0.06] p-5",
+                    "transition-transform duration-500",
+                    "ease-[cubic-bezier(0.22,1,0.36,1)]",
+                    openCategory === "altering-cave"
+                      ? "translate-y-0"
+                      : "-translate-y-3",
+                  ].join(" ")}
+                >
+                  <AlteringCaveEncounters />
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* =================================================
+              CATEGORIAS DO TIME
+          ================================================= */}
+
+          {teamCategories.map((category) => {
+            const isOpen = openCategory === category.slug;
 
             return (
               <section
@@ -123,17 +226,12 @@ export default function Home() {
                 className={[
                   "overflow-hidden rounded-2xl border bg-[#0b0f0b]",
                   "transition-all duration-300 ease-out",
-
                   isOpen
                     ? "border-lime-400/25 shadow-2xl shadow-lime-950/10"
                     : "border-white/[0.07] hover:border-white/[0.12]",
                 ].join(" ")}
               >
-
-                {/* CATEGORY HEADER */}
-
                 <div className="flex items-center">
-
                   <button
                     type="button"
                     onClick={() =>
@@ -150,14 +248,10 @@ export default function Home() {
                       text-left
                     "
                   >
-
-                    {/* ICON */}
-
                     <div
                       className={[
                         "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border text-2xl",
                         "transition-all duration-300",
-
                         isOpen
                           ? "scale-105 border-lime-400/30 bg-lime-400/10"
                           : "border-white/[0.07] bg-white/[0.035] group-hover:border-lime-400/20",
@@ -166,15 +260,10 @@ export default function Home() {
                       {category.icon}
                     </div>
 
-
-                    {/* TEXT */}
-
                     <div className="min-w-0">
-
                       <h3
                         className={[
                           "text-lg font-black transition-colors duration-200",
-
                           isOpen
                             ? "text-lime-400"
                             : "text-white",
@@ -193,18 +282,10 @@ export default function Home() {
                       >
                         {category.description}
                       </p>
-
                     </div>
-
                   </button>
 
-
-                  {/* RIGHT SIDE */}
-
                   <div className="flex items-center gap-2 pr-5">
-
-                    {/* OPEN PAGE */}
-
                     <Link
                       href={`/${category.slug}`}
                       className="
@@ -227,9 +308,6 @@ export default function Home() {
                       Abrir
                     </Link>
 
-
-                    {/* TOGGLE */}
-
                     <button
                       type="button"
                       aria-label={
@@ -248,7 +326,6 @@ export default function Home() {
                         "transition-all duration-300",
                         "hover:border-lime-400/30",
                         "hover:text-lime-400",
-
                         isOpen
                           ? "rotate-180"
                           : "rotate-0",
@@ -256,44 +333,31 @@ export default function Home() {
                     >
                       ↓
                     </button>
-
                   </div>
-
                 </div>
-
-
-                {/* =================================================
-                    CHANNELS
-                ================================================= */}
 
                 <div
                   className={[
                     "grid transition-[grid-template-rows,opacity]",
                     "duration-500",
                     "ease-[cubic-bezier(0.22,1,0.36,1)]",
-
                     isOpen
                       ? "grid-rows-[1fr] opacity-100"
                       : "grid-rows-[0fr] opacity-0",
                   ].join(" ")}
                 >
-
                   <div className="min-h-0 overflow-hidden">
-
                     <div
                       className={[
                         "border-t border-white/[0.06] p-5",
                         "transition-transform duration-500",
                         "ease-[cubic-bezier(0.22,1,0.36,1)]",
-
                         isOpen
                           ? "translate-y-0"
                           : "-translate-y-3",
                       ].join(" ")}
                     >
-
                       {category.channels.length > 0 ? (
-
                         <div
                           className="
                             grid
@@ -303,9 +367,7 @@ export default function Home() {
                             lg:grid-cols-3
                           "
                         >
-
                           {category.channels.map((channel) => (
-
                             <Link
                               key={channel.slug}
                               href={`/${category.slug}/${channel.slug}`}
@@ -325,7 +387,6 @@ export default function Home() {
                                 hover:shadow-lime-950/10
                               "
                             >
-
                               <div
                                 className="
                                   flex
@@ -333,7 +394,6 @@ export default function Home() {
                                   justify-between
                                 "
                               >
-
                                 <div
                                   className="
                                     flex
@@ -363,9 +423,7 @@ export default function Home() {
                                 >
                                   →
                                 </span>
-
                               </div>
-
 
                               <h4
                                 className="
@@ -377,7 +435,6 @@ export default function Home() {
                                 {channel.name}
                               </h4>
 
-
                               <p
                                 className="
                                   mt-1
@@ -388,7 +445,6 @@ export default function Home() {
                               >
                                 {channel.description}
                               </p>
-
 
                               <div
                                 className="
@@ -407,15 +463,10 @@ export default function Home() {
                               >
                                 Ver conteúdo
                               </div>
-
                             </Link>
-
                           ))}
-
                         </div>
-
                       ) : (
-
                         <div
                           className="
                             rounded-xl
@@ -427,7 +478,6 @@ export default function Home() {
                             text-center
                           "
                         >
-
                           <div className="text-2xl">
                             🚧
                           </div>
@@ -451,25 +501,17 @@ export default function Home() {
                           >
                             Novos conteúdos serão adicionados aqui.
                           </p>
-
                         </div>
-
                       )}
-
                     </div>
-
                   </div>
-
                 </div>
-
               </section>
             );
           })}
 
-
           {/* ===================================================
               MAPAS
-              ÁREA INDEPENDENTE
           =================================================== */}
 
           <section
@@ -486,9 +528,7 @@ export default function Home() {
               hover:shadow-lime-950/10
             "
           >
-
             <div className="flex items-center">
-
               <div
                 className="
                   flex
@@ -499,7 +539,6 @@ export default function Home() {
                   p-5
                 "
               >
-
                 <div
                   className="
                     flex
@@ -519,7 +558,6 @@ export default function Home() {
                 </div>
 
                 <div className="min-w-0">
-
                   <h3 className="text-lg font-black text-white">
                     Mapas
                   </h3>
@@ -535,14 +573,10 @@ export default function Home() {
                     Rotas, Pokémon, encontros, métodos, níveis e
                     informações dos mapas do PokeMMO.
                   </p>
-
                 </div>
-
               </div>
 
-
               <div className="pr-5">
-
                 <Link
                   href="/mapas"
                   className="
@@ -567,17 +601,12 @@ export default function Home() {
                   Abrir
                   <span>→</span>
                 </Link>
-
               </div>
-
             </div>
-
           </section>
-
 
           {/* ===================================================
               RAIDS
-              ÁREA INDEPENDENTE
           =================================================== */}
 
           <section
@@ -594,9 +623,7 @@ export default function Home() {
               hover:shadow-lime-950/10
             "
           >
-
             <div className="flex items-center">
-
               <div
                 className="
                   flex
@@ -607,7 +634,6 @@ export default function Home() {
                   p-5
                 "
               >
-
                 <div
                   className="
                     flex
@@ -627,7 +653,6 @@ export default function Home() {
                 </div>
 
                 <div className="min-w-0">
-
                   <h3 className="text-lg font-black text-white">
                     Raids
                   </h3>
@@ -642,14 +667,10 @@ export default function Home() {
                   >
                     Builds e estratégias para os Raids do PokeMMO.
                   </p>
-
                 </div>
-
               </div>
 
-
               <div className="pr-5">
-
                 <Link
                   href="/raid"
                   className="
@@ -674,18 +695,12 @@ export default function Home() {
                   Abrir
                   <span>→</span>
                 </Link>
-
               </div>
-
             </div>
-
           </section>
-
 
           {/* ===================================================
               JOGOS
-              SHINY HUNT
-              ÁREA INDEPENDENTE
           =================================================== */}
 
           <section
@@ -702,9 +717,7 @@ export default function Home() {
               hover:shadow-lime-950/10
             "
           >
-
             <div className="flex items-center">
-
               <div
                 className="
                   flex
@@ -715,7 +728,6 @@ export default function Home() {
                   p-5
                 "
               >
-
                 <div
                   className="
                     flex
@@ -735,7 +747,6 @@ export default function Home() {
                 </div>
 
                 <div className="min-w-0">
-
                   <h3 className="text-lg font-black text-white">
                     Jogos
                   </h3>
@@ -751,14 +762,10 @@ export default function Home() {
                     Pequenos jogos e ferramentas interativas
                     para o time.
                   </p>
-
                 </div>
-
               </div>
 
-
               <div className="pr-5">
-
                 <Link
                   href="/jogos/shiny_hunt"
                   className="
@@ -783,17 +790,107 @@ export default function Home() {
                   Abrir
                   <span>→</span>
                 </Link>
+              </div>
+            </div>
+          </section>
 
+          {/* ===================================================
+              LEADERBOARD
+          =================================================== */}
+
+          <section
+            className="
+              overflow-hidden
+              rounded-2xl
+              border
+              border-lime-400/15
+              bg-[#0b0f0b]
+              transition-all
+              duration-300
+              hover:border-lime-400/30
+              hover:shadow-2xl
+              hover:shadow-lime-950/10
+            "
+          >
+            <div className="flex items-center">
+              <div
+                className="
+                  flex
+                  min-w-0
+                  flex-1
+                  items-center
+                  gap-4
+                  p-5
+                "
+              >
+                <div
+                  className="
+                    flex
+                    h-12
+                    w-12
+                    shrink-0
+                    items-center
+                    justify-center
+                    rounded-xl
+                    border
+                    border-lime-400/20
+                    bg-lime-400/10
+                    text-2xl
+                  "
+                >
+                  🏆
+                </div>
+
+                <div className="min-w-0">
+                  <h3 className="text-lg font-black text-white">
+                    Leaderboard
+                  </h3>
+
+                  <p
+                    className="
+                      mt-1
+                      truncate
+                      text-sm
+                      text-gray-500
+                    "
+                  >
+                    Veja todos os shinies registrados pelos players
+                    do time.
+                  </p>
+                </div>
               </div>
 
+              <div className="pr-5">
+                <Link
+                  href="/leaderboard"
+                  className="
+                    inline-flex
+                    items-center
+                    gap-2
+                    rounded-lg
+                    border
+                    border-lime-400/20
+                    bg-lime-400/[0.06]
+                    px-4
+                    py-2
+                    text-xs
+                    font-bold
+                    text-gray-400
+                    transition
+                    hover:border-lime-400/40
+                    hover:bg-lime-400/10
+                    hover:text-lime-400
+                  "
+                >
+                  Abrir
+                  <span>→</span>
+                </Link>
+              </div>
             </div>
-
           </section>
 
         </div>
-
       </section>
-
 
       {/* =====================================================
           FOOTER
@@ -806,7 +903,6 @@ export default function Home() {
           bg-[#080c08]
         "
       >
-
         <div
           className="
             mx-auto
@@ -816,7 +912,6 @@ export default function Home() {
             sm:px-6
           "
         >
-
           <div
             className="
               flex
@@ -827,9 +922,7 @@ export default function Home() {
               sm:justify-between
             "
           >
-
             <div>
-
               <p className="text-sm font-bold text-white">
                 neverTakeBan
               </p>
@@ -837,19 +930,14 @@ export default function Home() {
               <p className="mt-1 text-xs text-gray-600">
                 PokeMMO Team
               </p>
-
             </div>
 
             <p className="text-xs text-gray-700">
               Guias, estratégias, mapas e informações do time.
             </p>
-
           </div>
-
         </div>
-
       </section>
-
     </main>
   );
 }

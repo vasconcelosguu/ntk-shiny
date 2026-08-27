@@ -5,8 +5,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "NeverTakeBan",
-  description:
-    "Time NeverTakeBan",
+  description: "Time NeverTakeBan",
 };
 
 export default function RootLayout({
@@ -17,7 +16,6 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body>
-
         {/* =====================================================
             HEADER
         ===================================================== */}
@@ -26,7 +24,6 @@ export default function RootLayout({
           <div className="header-inner">
 
             {/* LOGO */}
-
             <Link
               href="/"
               className="header-brand"
@@ -43,9 +40,7 @@ export default function RootLayout({
             </Link>
 
             {/* NAV */}
-
             <nav className="header-nav">
-
               <Link href="/">
                 Início
               </Link>
@@ -56,6 +51,10 @@ export default function RootLayout({
 
               <Link href="/hunt">
                 Hunt
+              </Link>
+
+              <Link href="/leaderboard">
+                Leaderboard
               </Link>
 
               <Link href="/raid">
@@ -69,11 +68,9 @@ export default function RootLayout({
               <Link href="/ajuda">
                 Ajuda
               </Link>
-
             </nav>
 
             {/* STATUS */}
-
             <div className="team-status">
               <span className="team-status-dot" />
               <span>Team Online</span>
@@ -87,7 +84,6 @@ export default function RootLayout({
         ===================================================== */}
 
         {children}
-
       </body>
     </html>
   );
