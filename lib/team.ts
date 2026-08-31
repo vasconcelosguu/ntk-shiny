@@ -3,6 +3,7 @@ export type TeamChannel = {
   slug: string;
   description: string;
   icon: string;
+  href?: string;
 };
 
 export type TeamCategory = {
@@ -20,7 +21,6 @@ export const teamCategories: TeamCategory[] = [
     description:
       "Métodos, rotas e estratégias para farmar no PokeMMO.",
     icon: "✨",
-
     channels: [
       {
         name: "Gym Run",
@@ -28,46 +28,47 @@ export const teamCategories: TeamCategory[] = [
         description:
           "Rotas e estratégias para farm de Gyms.",
         icon: "🎯",
+        href: "/farm/gym-run",
       },
-
       {
         name: "Morimoto & Cynthia",
         slug: "morimoto-cynthia",
         description:
           "Estratégias para enfrentar Morimoto e Cynthia.",
         icon: "⚔️",
+        href: "/farm/morimoto-cynthia",
       },
-
       {
         name: "Ho-Oh",
         slug: "ho-oh",
         description:
           "Informações e preparação para Ho-Oh.",
         icon: "🔥",
+        href: "/farm/ho-oh",
       },
-
       {
         name: "Apricorn",
         slug: "apricorn",
         description:
           "Rotas e métodos para farm de Apricorns.",
         icon: "🌱",
+        href: "/farm/apricorn",
       },
-
       {
         name: "Elite 4",
         slug: "elite-4",
         description:
           "Estratégias para farmar a Elite 4.",
         icon: "🏆",
+        href: "/farm/elite-4",
       },
-
       {
         name: "Red",
         slug: "red",
         description:
           "Estratégias para o Red.",
         icon: "🔴",
+        href: "/farm/red",
       },
     ],
   },
@@ -78,7 +79,6 @@ export const teamCategories: TeamCategory[] = [
     description:
       "Guias, métodos e estratégias para caça de Pokémon.",
     icon: "✨",
-
     channels: [
       {
         name: "Alfa",
@@ -86,22 +86,25 @@ export const teamCategories: TeamCategory[] = [
         description:
           "Estratégias para encontrar e capturar Pokémon Alfa.",
         icon: "👑",
+        href: "/hunt/alfa",
       },
-
       {
         name: "Honey Tree",
         slug: "honey-tree",
         description:
           "Locais, Pokémon e estratégias para Honey Trees.",
         icon: "🍯",
+        href: "/hunt/honey-tree",
       },
 
+      // SHINY AGORA É UMA PÁGINA PRINCIPAL
       {
         name: "Shiny",
         slug: "shiny",
         description:
-          "Central de caça Shiny e coleção do time.",
+          "Central de caça Shiny, coleção e informações do time.",
         icon: "✨",
+        href: "/shiny",
       },
     ],
   },
@@ -112,7 +115,6 @@ export const teamCategories: TeamCategory[] = [
     description:
       "Builds e estratégias para os Raids do PokeMMO.",
     icon: "⚔️",
-
     channels: [
       {
         name: "Builds",
@@ -120,22 +122,23 @@ export const teamCategories: TeamCategory[] = [
         description:
           "Builds recomendadas para Raids.",
         icon: "🛡️",
+        href: "/raid/builds",
       },
-
       {
         name: "Cresselia",
         slug: "cresselia",
         description:
           "Estratégias para o Raid de Cresselia.",
         icon: "🌙",
+        href: "/raid/cresselia",
       },
-
       {
         name: "Heatran",
         slug: "heatran",
         description:
           "Estratégias para o Raid de Heatran.",
         icon: "🔥",
+        href: "/raid/heatran",
       },
     ],
   },
@@ -146,7 +149,6 @@ export const teamCategories: TeamCategory[] = [
     description:
       "Conteúdo e estratégias dos eventos temporários.",
     icon: "🎯",
-
     channels: [
       {
         name: "Halloween",
@@ -154,6 +156,7 @@ export const teamCategories: TeamCategory[] = [
         description:
           "Guias e estratégias do evento de Halloween.",
         icon: "🎃",
+        href: "/eventos/halloween",
       },
     ],
   },
@@ -164,7 +167,6 @@ export const teamCategories: TeamCategory[] = [
     description:
       "Informações gerais para ajudar os membros do time.",
     icon: "❓",
-
     channels: [
       {
         name: "Conteúdo Geral",
@@ -173,7 +175,6 @@ export const teamCategories: TeamCategory[] = [
           "Informações gerais sobre o PokeMMO.",
         icon: "📚",
       },
-
       {
         name: "Upgrades",
         slug: "upgrades",
@@ -190,7 +191,6 @@ export const teamCategories: TeamCategory[] = [
     description:
       "Guias para progressão e melhorias dentro do PokeMMO.",
     icon: "🚀",
-
     channels: [],
   },
 ];

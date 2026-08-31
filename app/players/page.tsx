@@ -1,102 +1,136 @@
 import Link from "next/link";
-import { createClient } from "../../lib/supabase/server";
+import Image from "next/image";
+import { getPlayers } from "../../lib/players";
+
+export const revalidate = 60;
 
 export default async function PlayersPage() {
-  const supabase = await createClient();
-
-  const { data: profiles, error } = await supabase
-    .from("profiles")
-    .select("id, username")
-    .order("username", { ascending: true });
-
-  if (error) {
-    console.error(error);
-  }
-
-  const players = profiles ?? [];
-
-  const playerIds = players.map((player) => player.id);
-
-  let shinies: { profile_id: string }[] = [];
-
-  if (playerIds.length > 0) {
-    const { data } = await supabase
-      .from("shinies")
-      .select("profile_id")
-      .in("profile_id", playerIds);
-
-    shinies = data ?? [];
-  }
-
-  const shinyCount = new Map<string, number>();
-
-  for (const shiny of shinies) {
-    shinyCount.set(
-      shiny.profile_id,
-      (shinyCount.get(shiny.profile_id) ?? 0) + 1
-    );
-  }
+  const players = await getPlayers();
 
   return (
-    <div className="page">
-      <section className="page-hero">
-        <div className="container">
-          <span className="eyebrow">COMMUNITY</span>
+    <main className="min-h-screen bg-[#030603] text-white">
 
-          <h1>Players</h1>
+      {/* =====================================================
+          HEADER
+      ===================================================== */}
 
-          <p>
-            Conheça os jogadores e veja a coleção de shinies
-            cadastrada por cada um.
+      <section className="mx-auto w-full max-w-[1250px] px-4 pb-12 pt-12">
+
+        <div className="mb-10">
+
+          <p className="text-[10px] font-black uppercase tracking-[0.35em] text-lime-400">
+            Never Take Ban
           </p>
-        </div>
-      </section>
 
-      <section className="container players-section">
-        <div className="section-heading">
-          <div>
-            <span className="eyebrow">JOGADORES</span>
-            <h2>Todos os Players</h2>
-          </div>
+          <h1 className="mt-2 text-4xl font-black tracking-tight md:text-5xl">
+            Players
+          </h1>
 
-          <span className="section-count">
-            {players.length} jogadores
-          </span>
+          <p className="mt-3 max-w-2xl text-sm text-gray-500">
+            Veja os membros do time e todos os Shinies
+            registrados por cada player.
+          </p>
+
         </div>
+
+        {/* =================================================
+            PLAYER GRID
+        ================================================= */}
 
         {players.length === 0 ? (
-          <div className="empty-state">
-            <h3>Nenhum jogador cadastrado</h3>
-            <p>
-              Ainda não existem jogadores registrados na database.
+          <div className="rounded-2xl border border-white/[0.06] bg-[#080d08] p-10 text-center">
+            <p className="text-sm text-gray-500">
+              Nenhum player encontrado.
             </p>
           </div>
         ) : (
-          <div className="players-grid">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+
             {players.map((player) => (
               <Link
                 key={player.id}
                 href={`/players/${encodeURIComponent(player.username)}`}
-                className="player-card"
+                className="
+                  group
+                  rounded-2xl
+                  border
+                  border-white/[0.07]
+                  bg-[#080d08]
+                  p-5
+                  transition
+                  duration-300
+                  hover:-translate-y-1
+                  hover:border-lime-400/30
+                  hover:bg-[#0b120b]
+                  hover:shadow-[0_20px_60px_rgba(100,180,0,0.08)]
+                "
               >
-                <div className="player-avatar">
-                  {player.username.charAt(0).toUpperCase()}
-                </div>
 
-                <div className="player-info">
-                  <h3>{player.username}</h3>
+                <div className="flex items-center justify-between">
 
-                  <span>
-                    {shinyCount.get(player.id) ?? 0} shinies
+                  <div className="flex items-center gap-4">
+
+                    <div
+                      className="
+                        flex
+                        h-12
+                        w-12
+                        items-center
+                        justify-center
+                        overflow-hidden
+                        rounded-xl
+                        border
+                        border-lime-400/10
+                        bg-black
+                      "
+                    >
+                      <Image
+                        src="/images/ntb-logo.png"
+                        alt=""
+                        width={38}
+                        height={38}
+                        className="object-contain opacity-80"
+                      />
+                    </div>
+
+                    <div>
+                      <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-600">
+                        Player
+                      </p>
+
+                      <h2 className="mt-1 text-lg font-black text-white transition group-hover:text-lime-400">
+                        {player.username}
+                      </h2>
+                    </div>
+
+                  </div>
+
+                  <span className="text-xl text-gray-700 transition group-hover:translate-x-1 group-hover:text-lime-400">
+                    →
                   </span>
+
                 </div>
 
-                <span className="player-arrow">→</span>
+                <div className="mt-5 border-t border-white/[0.05] pt-4">
+
+                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-600">
+                    Coleção
+                  </span>
+
+                  <p className="mt-1 text-xs font-bold text-gray-400">
+                    Ver todos os Shinies →
+                  </p>
+
+                </div>
+
               </Link>
             ))}
+
           </div>
         )}
+
       </section>
-    </div>
+
+    </main>
   );
 }
