@@ -13,7 +13,9 @@ type PageProps = {
   }>;
 };
 
-function formatNumber(value: number | null) {
+function formatNumber(
+  value: number | null | undefined
+) {
   if (value === null || value === undefined) {
     return "0";
   }
@@ -21,7 +23,9 @@ function formatNumber(value: number | null) {
   return new Intl.NumberFormat("pt-BR").format(value);
 }
 
-function formatDate(value: string | null) {
+function formatDate(
+  value: string | null | undefined
+) {
   if (!value) {
     return "—";
   }
@@ -35,7 +39,9 @@ function formatDate(value: string | null) {
   return date.toLocaleDateString("pt-BR");
 }
 
-function getSprite(pokemonId: number | null) {
+function getSprite(
+  pokemonId: number | null | undefined
+) {
   if (!pokemonId) {
     return null;
   }
@@ -66,7 +72,6 @@ export default async function PlayerPage({
 
   return (
     <main className="min-h-screen bg-[#030603] text-white">
-
       <section className="mx-auto w-full max-w-[1250px] px-4 pb-20 pt-10">
 
         {/* VOLTAR */}
@@ -91,12 +96,19 @@ export default async function PlayerPage({
 
         {/* HEADER */}
 
-        <div className="mt-8 rounded-3xl border border-lime-400/10 bg-[#080d08] p-6 md:p-8">
-
+        <div
+          className="
+            mt-8
+            rounded-3xl
+            border
+            border-lime-400/10
+            bg-[#080d08]
+            p-6
+            md:p-8
+          "
+        >
           <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
-
             <div>
-
               <p className="text-[10px] font-black uppercase tracking-[0.35em] text-lime-400">
                 Coleção do player
               </p>
@@ -106,13 +118,12 @@ export default async function PlayerPage({
               </h1>
 
               <p className="mt-2 text-sm text-gray-500">
-                Todos os Shinies registrados.
+                Todos os Shinies registrados por este
+                player.
               </p>
-
             </div>
 
             <div className="flex gap-3">
-
               <div className="rounded-xl border border-white/[0.06] bg-black/40 px-5 py-3">
                 <p className="text-[8px] font-black uppercase tracking-wider text-gray-600">
                   Shinies
@@ -132,17 +143,13 @@ export default async function PlayerPage({
                   {formatNumber(totalEncounters)}
                 </p>
               </div>
-
             </div>
-
           </div>
-
         </div>
 
         {/* SHINIES */}
 
         <div className="mt-8">
-
           {shinies.length === 0 ? (
             <div className="rounded-2xl border border-white/[0.06] bg-[#080d08] p-10 text-center">
               <p className="text-sm text-gray-500">
@@ -152,7 +159,6 @@ export default async function PlayerPage({
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-
               {shinies.map((shiny) => {
                 const sprite = getSprite(
                   shiny.pokemon_id
@@ -160,7 +166,8 @@ export default async function PlayerPage({
 
                 const pokemonName =
                   shiny.display_name ||
-                  shiny.pokemon;
+                  shiny.pokemon ||
+                  "Pokémon";
 
                 return (
                   <article
@@ -176,8 +183,10 @@ export default async function PlayerPage({
                       duration-300
                       hover:-translate-y-1
                       hover:border-lime-400/25
+                      hover:shadow-[0_20px_60px_rgba(100,180,0,0.08)]
                     "
                   >
+                    {/* SPRITE */}
 
                     <div
                       className="
@@ -186,9 +195,11 @@ export default async function PlayerPage({
                         h-[230px]
                         items-center
                         justify-center
+                        overflow-hidden
                         bg-[radial-gradient(circle_at_center,rgba(163,230,53,0.10),transparent_60%)]
                       "
                     >
+                      <div className="pointer-events-none absolute h-32 w-32 rounded-full bg-lime-400/[0.06] blur-3xl transition group-hover:bg-lime-400/[0.12]" />
 
                       {sprite ? (
                         <Image
@@ -196,24 +207,27 @@ export default async function PlayerPage({
                           alt={`${pokemonName} shiny`}
                           width={190}
                           height={190}
+                          unoptimized
+                          draggable={false}
                           className="
+                            relative
+                            z-10
                             object-contain
                             transition-transform
                             duration-500
                             group-hover:scale-110
                           "
-                          unoptimized
                         />
                       ) : (
-                        <span className="text-5xl text-gray-700">
+                        <span className="relative z-10 text-5xl text-gray-700">
                           ?
                         </span>
                       )}
-
                     </div>
 
-                    <div className="border-t border-white/[0.05] p-5">
+                    {/* INFO */}
 
+                    <div className="border-t border-white/[0.05] p-5">
                       <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-600">
                         Shiny
                       </p>
@@ -223,7 +237,6 @@ export default async function PlayerPage({
                       </h2>
 
                       <div className="mt-4 grid grid-cols-2 gap-3">
-
                         <div>
                           <p className="text-[8px] font-black uppercase tracking-wider text-gray-600">
                             Encounters
@@ -247,14 +260,12 @@ export default async function PlayerPage({
                             )}
                           </p>
                         </div>
-
                       </div>
 
                       {(shiny.method ||
                         shiny.region ||
                         shiny.location) && (
                         <div className="mt-4 border-t border-white/[0.05] pt-4">
-
                           <p className="truncate text-[9px] font-bold uppercase tracking-wider text-gray-600">
                             {[
                               shiny.method,
@@ -264,23 +275,63 @@ export default async function PlayerPage({
                               .filter(Boolean)
                               .join(" • ")}
                           </p>
-
                         </div>
                       )}
-
                     </div>
-
                   </article>
                 );
               })}
-
             </div>
           )}
-
         </div>
 
-      </section>
+        {/* NAVEGAÇÃO */}
 
+        <div className="mt-10 flex flex-wrap gap-3">
+          <Link
+            href="/players"
+            className="
+              rounded-xl
+              border
+              border-white/[0.08]
+              bg-white/[0.02]
+              px-5
+              py-3
+              text-[10px]
+              font-black
+              uppercase
+              tracking-[0.2em]
+              text-gray-500
+              transition
+              hover:border-lime-400/30
+              hover:text-lime-400
+            "
+          >
+            ← Todos os Players
+          </Link>
+
+          <Link
+            href="/shiny"
+            className="
+              rounded-xl
+              border
+              border-lime-400/20
+              bg-lime-400/[0.05]
+              px-5
+              py-3
+              text-[10px]
+              font-black
+              uppercase
+              tracking-[0.2em]
+              text-lime-400
+              transition
+              hover:bg-lime-400/10
+            "
+          >
+            Ver Shinies →
+          </Link>
+        </div>
+      </section>
     </main>
   );
 }

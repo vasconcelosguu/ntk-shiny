@@ -3,11 +3,12 @@ import { createClient } from "./supabase/server";
 export type Player = {
   id: string;
   username: string;
+  shinyboardUsername: string | null;
+  shinyCount: number;
 };
 
 export type PlayerShiny = {
   id: string;
-  player_id: string;
   username: string;
   pokemon: string;
   display_name: string | null;
@@ -19,18 +20,19 @@ export type PlayerShiny = {
   caught_at: string | null;
 };
 
-export type LatestShiny = PlayerShiny;
-
-/* ============================================================
-   PLAYERS
-============================================================ */
-
+/**
+ * Busca todos os players.
+ *
+ * IMPORTANTE:
+ * A tabela usada aqui é "shiny_players",
+ * não "players".
+ */
 export async function getPlayers(): Promise<Player[]> {
   const supabase = await createClient();
 
-  const { data, error } = await supabase
+  const { data: players, error } = await supabase
     .from("shiny_players")
-    .select("id, username")
+    .select("*")
     .order("username", { ascending: true });
 
   if (error) {
@@ -38,49 +40,95 @@ export async function getPlayers(): Promise<Player[]> {
     return [];
   }
 
-  return (data ?? []) as Player[];
+  if (!players) {
+    return [];
+  }
+
+  /*
+   * Busca a quantidade de shinies de cada player.
+   *
+   * A relação é:
+   * shiny_entries.player_id -> shiny_players.id
+   */
+  const { data: shinies, error: shiniesError } = await supabase
+    .from("shiny_entries")
+    .select("player_id");
+
+  if (shiniesError) {
+    console.error("[PLAYER SHINIES COUNT]", shiniesError);
+  }
+
+  const shinyCounts = new Map<string, number>();
+
+  for (const shiny of shinies ?? []) {
+    if (!shiny.player_id) continue;
+
+    shinyCounts.set(
+      shiny.player_id,
+      (shinyCounts.get(shiny.player_id) ?? 0) + 1
+    );
+  }
+
+  return players.map((player) => ({
+    id: String(player.id),
+    username: String(player.username),
+    shinyboardUsername:
+      player.shinyboard_username ??
+      player.shinyboardUsername ??
+      null,
+    shinyCount: shinyCounts.get(player.id) ?? 0,
+  }));
 }
 
-/* ============================================================
-   PLAYER INDIVIDUAL
-============================================================ */
-
+/**
+ * Busca um player pelo username.
+ */
 export async function getPlayer(
   username: string
 ): Promise<Player | null> {
-  const supabase = await createClient();
+  const players = await getPlayers();
 
-  const normalized = username.trim();
+  const normalized = username.trim().toLowerCase();
 
-  const { data, error } = await supabase
-    .from("shiny_players")
-    .select("id, username")
-    .ilike("username", normalized)
-    .maybeSingle();
-
-  if (error) {
-    console.error("[PLAYER]", username, error);
-    return null;
-  }
-
-  return data ? (data as Player) : null;
+  return (
+    players.find(
+      (player) =>
+        player.username.trim().toLowerCase() === normalized
+    ) ?? null
+  );
 }
 
-/* ============================================================
-   SHINIES DO PLAYER
-============================================================ */
-
+/**
+ * Busca todos os shinies de um player.
+ */
 export async function getPlayerShinies(
   username: string
 ): Promise<PlayerShiny[]> {
   const supabase = await createClient();
 
-  const player = await getPlayer(username);
+  const normalized = username.trim();
+
+  /*
+   * Primeiro encontramos o player.
+   */
+  const { data: player, error: playerError } = await supabase
+    .from("shiny_players")
+    .select("id, username")
+    .ilike("username", normalized)
+    .maybeSingle();
+
+  if (playerError) {
+    console.error("[PLAYER]", playerError);
+    return [];
+  }
 
   if (!player) {
     return [];
   }
 
+  /*
+   * Depois buscamos os shinies ligados ao player_id.
+   */
   const { data, error } = await supabase
     .from("shiny_entries")
     .select(`
@@ -90,13 +138,7 @@ export async function getPlayerShinies(
       display_name,
       pokemon_id,
       encounters,
-      method,
-      region,
-      location,
-      caught_at,
-      shiny_players!inner (
-        username
-      )
+      caught_at
     `)
     .eq("player_id", player.id)
     .order("caught_at", {
@@ -112,100 +154,16 @@ export async function getPlayerShinies(
     return [];
   }
 
-  return (data ?? []).map((entry: any) => {
-    const playerData = Array.isArray(entry.shiny_players)
-      ? entry.shiny_players[0]
-      : entry.shiny_players;
-
-    return {
-      id: entry.id,
-      player_id: entry.player_id,
-      username: playerData?.username ?? player.username,
-      pokemon: entry.pokemon,
-      display_name: entry.display_name,
-      pokemon_id: entry.pokemon_id,
-      encounters: entry.encounters,
-      method: entry.method,
-      region: entry.region,
-      location: entry.location,
-      caught_at: entry.caught_at,
-    };
-  });
-}
-
-/* ============================================================
-   TODOS OS SHINIES
-============================================================ */
-
-export async function getAllShinies(): Promise<PlayerShiny[]> {
-  const supabase = await createClient();
-
-  const { data, error } = await supabase
-    .from("shiny_entries")
-    .select(`
-      id,
-      player_id,
-      pokemon,
-      display_name,
-      pokemon_id,
-      encounters,
-      method,
-      region,
-      location,
-      caught_at,
-      shiny_players!inner (
-        username
-      )
-    `)
-    .order("caught_at", {
-      ascending: false,
-    });
-
-  if (error) {
-    console.error("[ALL SHINIES]", error);
-    return [];
-  }
-
-  return (data ?? []).map((entry: any) => {
-    const playerData = Array.isArray(entry.shiny_players)
-      ? entry.shiny_players[0]
-      : entry.shiny_players;
-
-    return {
-      id: entry.id,
-      player_id: entry.player_id,
-      username: playerData?.username ?? "Unknown",
-      pokemon: entry.pokemon,
-      display_name: entry.display_name,
-      pokemon_id: entry.pokemon_id,
-      encounters: entry.encounters,
-      method: entry.method,
-      region: entry.region,
-      location: entry.location,
-      caught_at: entry.caught_at,
-    };
-  });
-}
-
-/* ============================================================
-   ÚLTIMO SHINY DE CADA PLAYER
-============================================================ */
-
-export async function getLatestShinies(): Promise<LatestShiny[]> {
-  const shinies = await getAllShinies();
-
-  const players = new Set<string>();
-
-  const latest: LatestShiny[] = [];
-
-  for (const shiny of shinies) {
-    if (players.has(shiny.player_id)) {
-      continue;
-    }
-
-    players.add(shiny.player_id);
-    latest.push(shiny);
-  }
-
-  return latest;
+  return (data ?? []).map((shiny) => ({
+    id: String(shiny.id),
+    username: player.username,
+    pokemon: shiny.pokemon,
+    display_name: shiny.display_name ?? null,
+    pokemon_id: shiny.pokemon_id ?? null,
+    encounters: shiny.encounters ?? null,
+    method: null,
+    region: null,
+    location: null,
+    caught_at: shiny.caught_at ?? null,
+  }));
 }
