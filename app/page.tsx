@@ -1,943 +1,308 @@
-"use client";
-
-import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
 
-import { teamCategories } from "../lib/team";
+import { getLatestShinies } from "../lib/home";
 
-import {
-  AlteringCave,
-  AlteringCaveEncounters,
-} from "./components/AlteringCave";
+import LatestShiniesCarousel from "./components/LatestShiniesCarousel";
+import { AlteringCave } from "./components/AlteringCave";
 
-export default function Home() {
-  const [openCategory, setOpenCategory] = useState<string | null>(null);
+export const revalidate = 60;
 
-  function toggleCategory(slug: string) {
-    setOpenCategory((current) =>
-      current === slug ? null : slug
-    );
-  }
+export default async function Home() {
+  const latestShinies = await getLatestShinies();
 
   return (
-    <main className="min-h-screen">
+    <main className="relative min-h-[calc(100vh-72px)] overflow-hidden bg-[#050805]">
       {/* =====================================================
-          BANNER
+          BACKGROUND
       ===================================================== */}
 
-      <section className="home-banner-section">
-        <div className="home-banner">
-          <Image
-            src="/images/home-banner.jpg"
-            alt="neverTakeBan"
-            fill
-            priority
-            sizes="100vw"
-            className="home-banner-image"
-          />
+      <div className="pointer-events-none absolute inset-0">
+        <Image
+          src="/images/home-banner.jpg"
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          className="
+            object-cover
+            object-center
+            opacity-[0.30]
+          "
+        />
 
-          <div className="home-banner-overlay" />
-        </div>
-      </section>
+        {/* Escurece a imagem */}
+        <div className="absolute inset-0 bg-[#030603]/70" />
+
+        {/* Glow verde central */}
+        <div
+          className="
+            absolute
+            inset-0
+            bg-[radial-gradient(
+              circle_at_50%_20%,
+              rgba(132,204,22,0.12),
+              transparent_45%
+            )]
+          "
+        />
+
+        {/* Fade inferior */}
+        <div
+          className="
+            absolute
+            inset-x-0
+            bottom-0
+            h-[55%]
+            bg-gradient-to-t
+            from-[#050805]
+            via-[#050805]/90
+            to-transparent
+          "
+        />
+
+        {/* Vinheta lateral */}
+        <div
+          className="
+            absolute
+            inset-0
+            bg-[radial-gradient(
+              ellipse_at_center,
+              transparent_20%,
+              rgba(0,0,0,0.45)_100%
+            )]
+          "
+        />
+      </div>
 
       {/* =====================================================
-          ALTERING CAVE
-          OS 4 CARDS CONTINUAM NO TOPO
+          CONTENT
       ===================================================== */}
 
-      <section
+      <div
         className="
+          relative
+          z-10
           mx-auto
-          max-w-7xl
+          w-full
+          max-w-[1400px]
           px-5
-          pt-8
-          sm:px-6
+          sm:px-8
+          lg:px-10
         "
       >
-        <AlteringCave />
-      </section>
+        {/* =================================================
+            HERO
+        ================================================= */}
 
-      {/* =====================================================
-          CONTEÚDO
-      ===================================================== */}
-
-      <section
-        className="
-          mx-auto
-          max-w-7xl
-          px-5
-          py-12
-          sm:px-6
-        "
-      >
-        {/* HEADER */}
-
-        <div className="mb-7">
+        <section
+          className="
+            flex
+            min-h-[390px]
+            flex-col
+            items-center
+            justify-center
+            text-center
+            pt-8
+          "
+        >
           <p
             className="
+              mb-4
               text-[10px]
-              font-bold
-              uppercase
-              tracking-[0.2em]
-              text-lime-400
-            "
-          >
-            Conteúdo
-          </p>
-
-          <h2
-            className="
-              mt-2
-              text-2xl
               font-black
-              tracking-tight
-              text-white
+              uppercase
+              tracking-[0.45em]
+              text-lime-400
+              drop-shadow-[0_0_14px_rgba(163,230,53,0.3)]
             "
           >
-            Áreas do time
-          </h2>
-
-          <p className="mt-1 text-sm text-gray-500">
-            Guias, ferramentas e informações para o PokeMMO.
+            NEVER TAKE BAN
           </p>
-        </div>
 
-        {/* ===================================================
-            CATEGORIAS
-        =================================================== */}
-
-        <div className="space-y-3">
-
-          {/* =================================================
-              ENCONTROS ATUAIS
-          ================================================= */}
-
-          <section
+          <h1
             className="
-              overflow-hidden
-              rounded-2xl
-              border
-              border-white/[0.07]
-              bg-[#0b0f0b]
-              transition-all
-              duration-300
-              ease-out
-              hover:border-lime-400/20
+              text-5xl
+              font-black
+              tracking-[-0.04em]
+              text-white
+              drop-shadow-[0_10px_40px_rgba(0,0,0,0.9)]
+              sm:text-6xl
+              md:text-7xl
             "
           >
-            <div className="flex items-center">
-              <div className="flex min-w-0 flex-1 items-center gap-4 p-5">
-                <div
-                  className="
-                    flex
-                    h-12
-                    w-12
-                    shrink-0
-                    items-center
-                    justify-center
-                    rounded-xl
-                    border
-                    border-lime-400/20
-                    bg-lime-400/10
-                    text-2xl
-                  "
-                >
-                  🐾
-                </div>
+            PokeMMO Team
+          </h1>
 
-                <div className="min-w-0">
-                  <h3 className="text-lg font-black text-white">
-                    Encontros atuais
-                  </h3>
+          <p
+            className="
+              mt-5
+              max-w-xl
+              text-sm
+              leading-6
+              text-gray-400
+              sm:text-base
+            "
+          >
+            Shinies, eventos, raids, ferramentas e informações do time.
+          </p>
 
-                  <p className="mt-1 truncate text-sm text-gray-500">
-                    Hordes, Singles e Rare Singles do Altering Cave.
-                  </p>
-                </div>
-              </div>
+          {/* Linha decorativa */}
 
-              <div className="pr-5">
-                <button
-                  type="button"
-                  aria-label="Abrir Encontros atuais"
-                  onClick={() =>
-                    setOpenCategory((current) =>
-                      current === "altering-cave"
-                        ? null
-                        : "altering-cave"
-                    )
-                  }
-                  className={[
-                    "flex h-9 w-9 items-center justify-center rounded-lg border",
-                    "border-white/[0.07]",
-                    "bg-white/[0.025]",
-                    "text-gray-500",
-                    "transition-all duration-300",
-                    "hover:border-lime-400/30",
-                    "hover:text-lime-400",
-                    openCategory === "altering-cave"
-                      ? "rotate-180"
-                      : "rotate-0",
-                  ].join(" ")}
-                >
-                  ↓
-                </button>
-              </div>
+          <div className="mt-8 flex items-center gap-3">
+            <span
+              className="
+                h-px
+                w-14
+                bg-gradient-to-r
+                from-transparent
+                to-lime-400/60
+              "
+            />
+
+            <span
+              className="
+                h-1.5
+                w-1.5
+                rotate-45
+                bg-lime-400
+                shadow-[0_0_14px_rgba(163,230,53,0.9)]
+              "
+            />
+
+            <span
+              className="
+                h-px
+                w-14
+                bg-gradient-to-l
+                from-transparent
+                to-lime-400/60
+              "
+            />
+          </div>
+        </section>
+
+        {/* =================================================
+            POKEMMO INFORMATION
+        ================================================= */}
+
+        <section className="pb-12">
+          <div className="mb-6 flex items-end justify-between">
+            <div>
+              <p
+                className="
+                  text-[10px]
+                  font-black
+                  uppercase
+                  tracking-[0.32em]
+                  text-lime-400
+                "
+              >
+                PokeMMO
+              </p>
+
+              <h2
+                className="
+                  mt-2
+                  text-2xl
+                  font-black
+                  tracking-tight
+                  text-white
+                  sm:text-3xl
+                "
+              >
+                Informações do jogo
+              </h2>
+
+              <p className="mt-1 text-sm text-gray-500">
+                Dados e horários atualizados em tempo real.
+              </p>
             </div>
 
             <div
-              className={[
-                "grid transition-[grid-template-rows,opacity]",
-                "duration-500",
-                "ease-[cubic-bezier(0.22,1,0.36,1)]",
-                openCategory === "altering-cave"
-                  ? "grid-rows-[1fr] opacity-100"
-                  : "grid-rows-[0fr] opacity-0",
-              ].join(" ")}
+              className="
+                hidden
+                rounded-full
+                border
+                border-lime-400/15
+                bg-black/30
+                px-4
+                py-2
+                text-[10px]
+                font-black
+                uppercase
+                tracking-[0.15em]
+                text-gray-500
+                sm:block
+              "
             >
-              <div className="min-h-0 overflow-hidden">
-                <div
-                  className={[
-                    "border-t border-white/[0.06] p-5",
-                    "transition-transform duration-500",
-                    "ease-[cubic-bezier(0.22,1,0.36,1)]",
-                    openCategory === "altering-cave"
-                      ? "translate-y-0"
-                      : "-translate-y-3",
-                  ].join(" ")}
-                >
-                  <AlteringCaveEncounters />
-                </div>
-              </div>
+              LIVE
             </div>
-          </section>
-
-          {/* =================================================
-              CATEGORIAS DO TIME
-          ================================================= */}
-
-          {teamCategories.map((category) => {
-            const isOpen = openCategory === category.slug;
-
-            return (
-              <section
-                key={category.slug}
-                className={[
-                  "overflow-hidden rounded-2xl border bg-[#0b0f0b]",
-                  "transition-all duration-300 ease-out",
-                  isOpen
-                    ? "border-lime-400/25 shadow-2xl shadow-lime-950/10"
-                    : "border-white/[0.07] hover:border-white/[0.12]",
-                ].join(" ")}
-              >
-                <div className="flex items-center">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      toggleCategory(category.slug)
-                    }
-                    className="
-                      group
-                      flex
-                      min-w-0
-                      flex-1
-                      items-center
-                      gap-4
-                      p-5
-                      text-left
-                    "
-                  >
-                    <div
-                      className={[
-                        "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border text-2xl",
-                        "transition-all duration-300",
-                        isOpen
-                          ? "scale-105 border-lime-400/30 bg-lime-400/10"
-                          : "border-white/[0.07] bg-white/[0.035] group-hover:border-lime-400/20",
-                      ].join(" ")}
-                    >
-                      {category.icon}
-                    </div>
-
-                    <div className="min-w-0">
-                      <h3
-                        className={[
-                          "text-lg font-black transition-colors duration-200",
-                          isOpen
-                            ? "text-lime-400"
-                            : "text-white",
-                        ].join(" ")}
-                      >
-                        {category.name}
-                      </h3>
-
-                      <p
-                        className="
-                          mt-1
-                          truncate
-                          text-sm
-                          text-gray-500
-                        "
-                      >
-                        {category.description}
-                      </p>
-                    </div>
-                  </button>
-
-                  <div className="flex items-center gap-2 pr-5">
-                    <Link
-                      href={`/${category.slug}`}
-                      className="
-                        hidden
-                        rounded-lg
-                        border
-                        border-white/[0.07]
-                        bg-white/[0.025]
-                        px-3
-                        py-2
-                        text-xs
-                        font-bold
-                        text-gray-500
-                        transition
-                        hover:border-lime-400/30
-                        hover:text-lime-400
-                        sm:block
-                      "
-                    >
-                      Abrir
-                    </Link>
-
-                    <button
-                      type="button"
-                      aria-label={
-                        isOpen
-                          ? `Fechar ${category.name}`
-                          : `Abrir ${category.name}`
-                      }
-                      onClick={() =>
-                        toggleCategory(category.slug)
-                      }
-                      className={[
-                        "flex h-9 w-9 items-center justify-center rounded-lg border",
-                        "border-white/[0.07]",
-                        "bg-white/[0.025]",
-                        "text-gray-500",
-                        "transition-all duration-300",
-                        "hover:border-lime-400/30",
-                        "hover:text-lime-400",
-                        isOpen
-                          ? "rotate-180"
-                          : "rotate-0",
-                      ].join(" ")}
-                    >
-                      ↓
-                    </button>
-                  </div>
-                </div>
-
-                <div
-                  className={[
-                    "grid transition-[grid-template-rows,opacity]",
-                    "duration-500",
-                    "ease-[cubic-bezier(0.22,1,0.36,1)]",
-                    isOpen
-                      ? "grid-rows-[1fr] opacity-100"
-                      : "grid-rows-[0fr] opacity-0",
-                  ].join(" ")}
-                >
-                  <div className="min-h-0 overflow-hidden">
-                    <div
-                      className={[
-                        "border-t border-white/[0.06] p-5",
-                        "transition-transform duration-500",
-                        "ease-[cubic-bezier(0.22,1,0.36,1)]",
-                        isOpen
-                          ? "translate-y-0"
-                          : "-translate-y-3",
-                      ].join(" ")}
-                    >
-                      {category.channels.length > 0 ? (
-                        <div
-                          className="
-                            grid
-                            grid-cols-1
-                            gap-3
-                            sm:grid-cols-2
-                            lg:grid-cols-3
-                          "
-                        >
-                          {category.channels.map((channel) => (
-                            <Link
-                              key={channel.slug}
-                              href={`/${category.slug}/${channel.slug}`}
-                              className="
-                                group
-                                rounded-xl
-                                border
-                                border-white/[0.06]
-                                bg-[#070a07]
-                                p-4
-                                transition-all
-                                duration-200
-                                hover:-translate-y-1
-                                hover:border-lime-400/25
-                                hover:bg-[#0b100b]
-                                hover:shadow-xl
-                                hover:shadow-lime-950/10
-                              "
-                            >
-                              <div
-                                className="
-                                  flex
-                                  items-start
-                                  justify-between
-                                "
-                              >
-                                <div
-                                  className="
-                                    flex
-                                    h-10
-                                    w-10
-                                    items-center
-                                    justify-center
-                                    rounded-lg
-                                    border
-                                    border-white/[0.06]
-                                    bg-white/[0.025]
-                                    text-lg
-                                  "
-                                >
-                                  {channel.icon}
-                                </div>
-
-                                <span
-                                  className="
-                                    text-sm
-                                    text-gray-700
-                                    transition-all
-                                    duration-200
-                                    group-hover:translate-x-1
-                                    group-hover:text-lime-400
-                                  "
-                                >
-                                  →
-                                </span>
-                              </div>
-
-                              <h4
-                                className="
-                                  mt-4
-                                  font-bold
-                                  text-white
-                                "
-                              >
-                                {channel.name}
-                              </h4>
-
-                              <p
-                                className="
-                                  mt-1
-                                  text-xs
-                                  leading-5
-                                  text-gray-500
-                                "
-                              >
-                                {channel.description}
-                              </p>
-
-                              <div
-                                className="
-                                  mt-4
-                                  border-t
-                                  border-white/[0.05]
-                                  pt-3
-                                  text-[10px]
-                                  font-bold
-                                  uppercase
-                                  tracking-[0.15em]
-                                  text-gray-700
-                                  transition-colors
-                                  group-hover:text-lime-400
-                                "
-                              >
-                                Ver conteúdo
-                              </div>
-                            </Link>
-                          ))}
-                        </div>
-                      ) : (
-                        <div
-                          className="
-                            rounded-xl
-                            border
-                            border-dashed
-                            border-white/[0.07]
-                            bg-white/[0.015]
-                            p-7
-                            text-center
-                          "
-                        >
-                          <div className="text-2xl">
-                            🚧
-                          </div>
-
-                          <h4
-                            className="
-                              mt-3
-                              font-bold
-                              text-white
-                            "
-                          >
-                            Área em construção
-                          </h4>
-
-                          <p
-                            className="
-                              mt-1
-                              text-sm
-                              text-gray-500
-                            "
-                          >
-                            Novos conteúdos serão adicionados aqui.
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </section>
-            );
-          })}
-
-          {/* ===================================================
-              MAPAS
-          =================================================== */}
-
-          <section
-            className="
-              overflow-hidden
-              rounded-2xl
-              border
-              border-lime-400/15
-              bg-[#0b0f0b]
-              transition-all
-              duration-300
-              hover:border-lime-400/30
-              hover:shadow-2xl
-              hover:shadow-lime-950/10
-            "
-          >
-            <div className="flex items-center">
-              <div
-                className="
-                  flex
-                  min-w-0
-                  flex-1
-                  items-center
-                  gap-4
-                  p-5
-                "
-              >
-                <div
-                  className="
-                    flex
-                    h-12
-                    w-12
-                    shrink-0
-                    items-center
-                    justify-center
-                    rounded-xl
-                    border
-                    border-lime-400/20
-                    bg-lime-400/10
-                    text-2xl
-                  "
-                >
-                  🗺️
-                </div>
-
-                <div className="min-w-0">
-                  <h3 className="text-lg font-black text-white">
-                    Mapas
-                  </h3>
-
-                  <p
-                    className="
-                      mt-1
-                      truncate
-                      text-sm
-                      text-gray-500
-                    "
-                  >
-                    Rotas, Pokémon, encontros, métodos, níveis e
-                    informações dos mapas do PokeMMO.
-                  </p>
-                </div>
-              </div>
-
-              <div className="pr-5">
-                <Link
-                  href="/mapas"
-                  className="
-                    inline-flex
-                    items-center
-                    gap-2
-                    rounded-lg
-                    border
-                    border-lime-400/20
-                    bg-lime-400/[0.06]
-                    px-4
-                    py-2
-                    text-xs
-                    font-bold
-                    text-gray-400
-                    transition
-                    hover:border-lime-400/40
-                    hover:bg-lime-400/10
-                    hover:text-lime-400
-                  "
-                >
-                  Abrir
-                  <span>→</span>
-                </Link>
-              </div>
-            </div>
-          </section>
-
-          {/* ===================================================
-              RAIDS
-          =================================================== */}
-
-          <section
-            className="
-              overflow-hidden
-              rounded-2xl
-              border
-              border-lime-400/15
-              bg-[#0b0f0b]
-              transition-all
-              duration-300
-              hover:border-lime-400/30
-              hover:shadow-2xl
-              hover:shadow-lime-950/10
-            "
-          >
-            <div className="flex items-center">
-              <div
-                className="
-                  flex
-                  min-w-0
-                  flex-1
-                  items-center
-                  gap-4
-                  p-5
-                "
-              >
-                <div
-                  className="
-                    flex
-                    h-12
-                    w-12
-                    shrink-0
-                    items-center
-                    justify-center
-                    rounded-xl
-                    border
-                    border-lime-400/20
-                    bg-lime-400/10
-                    text-2xl
-                  "
-                >
-                  ⚔️
-                </div>
-
-                <div className="min-w-0">
-                  <h3 className="text-lg font-black text-white">
-                    Raids
-                  </h3>
-
-                  <p
-                    className="
-                      mt-1
-                      truncate
-                      text-sm
-                      text-gray-500
-                    "
-                  >
-                    Builds e estratégias para os Raids do PokeMMO.
-                  </p>
-                </div>
-              </div>
-
-              <div className="pr-5">
-                <Link
-                  href="/raid"
-                  className="
-                    inline-flex
-                    items-center
-                    gap-2
-                    rounded-lg
-                    border
-                    border-lime-400/20
-                    bg-lime-400/[0.06]
-                    px-4
-                    py-2
-                    text-xs
-                    font-bold
-                    text-gray-400
-                    transition
-                    hover:border-lime-400/40
-                    hover:bg-lime-400/10
-                    hover:text-lime-400
-                  "
-                >
-                  Abrir
-                  <span>→</span>
-                </Link>
-              </div>
-            </div>
-          </section>
-
-          {/* ===================================================
-              JOGOS
-          =================================================== */}
-
-          <section
-            className="
-              overflow-hidden
-              rounded-2xl
-              border
-              border-lime-400/15
-              bg-[#0b0f0b]
-              transition-all
-              duration-300
-              hover:border-lime-400/30
-              hover:shadow-2xl
-              hover:shadow-lime-950/10
-            "
-          >
-            <div className="flex items-center">
-              <div
-                className="
-                  flex
-                  min-w-0
-                  flex-1
-                  items-center
-                  gap-4
-                  p-5
-                "
-              >
-                <div
-                  className="
-                    flex
-                    h-12
-                    w-12
-                    shrink-0
-                    items-center
-                    justify-center
-                    rounded-xl
-                    border
-                    border-lime-400/20
-                    bg-lime-400/10
-                    text-2xl
-                  "
-                >
-                  🎮
-                </div>
-
-                <div className="min-w-0">
-                  <h3 className="text-lg font-black text-white">
-                    Jogos
-                  </h3>
-
-                  <p
-                    className="
-                      mt-1
-                      truncate
-                      text-sm
-                      text-gray-500
-                    "
-                  >
-                    Pequenos jogos e ferramentas interativas
-                    para o time.
-                  </p>
-                </div>
-              </div>
-
-              <div className="pr-5">
-                <Link
-                  href="/jogos/shiny_hunt"
-                  className="
-                    inline-flex
-                    items-center
-                    gap-2
-                    rounded-lg
-                    border
-                    border-lime-400/20
-                    bg-lime-400/[0.06]
-                    px-4
-                    py-2
-                    text-xs
-                    font-bold
-                    text-gray-400
-                    transition
-                    hover:border-lime-400/40
-                    hover:bg-lime-400/10
-                    hover:text-lime-400
-                  "
-                >
-                  Abrir
-                  <span>→</span>
-                </Link>
-              </div>
-            </div>
-          </section>
-
-          {/* ===================================================
-              LEADERBOARD
-          =================================================== */}
-
-          <section
-            className="
-              overflow-hidden
-              rounded-2xl
-              border
-              border-lime-400/15
-              bg-[#0b0f0b]
-              transition-all
-              duration-300
-              hover:border-lime-400/30
-              hover:shadow-2xl
-              hover:shadow-lime-950/10
-            "
-          >
-            <div className="flex items-center">
-              <div
-                className="
-                  flex
-                  min-w-0
-                  flex-1
-                  items-center
-                  gap-4
-                  p-5
-                "
-              >
-                <div
-                  className="
-                    flex
-                    h-12
-                    w-12
-                    shrink-0
-                    items-center
-                    justify-center
-                    rounded-xl
-                    border
-                    border-lime-400/20
-                    bg-lime-400/10
-                    text-2xl
-                  "
-                >
-                  🏆
-                </div>
-
-                <div className="min-w-0">
-                  <h3 className="text-lg font-black text-white">
-                    Leaderboard
-                  </h3>
-
-                  <p
-                    className="
-                      mt-1
-                      truncate
-                      text-sm
-                      text-gray-500
-                    "
-                  >
-                    Veja todos os shinies registrados pelos players
-                    do time.
-                  </p>
-                </div>
-              </div>
-
-              <div className="pr-5">
-                <Link
-                  href="/leaderboard"
-                  className="
-                    inline-flex
-                    items-center
-                    gap-2
-                    rounded-lg
-                    border
-                    border-lime-400/20
-                    bg-lime-400/[0.06]
-                    px-4
-                    py-2
-                    text-xs
-                    font-bold
-                    text-gray-400
-                    transition
-                    hover:border-lime-400/40
-                    hover:bg-lime-400/10
-                    hover:text-lime-400
-                  "
-                >
-                  Abrir
-                  <span>→</span>
-                </Link>
-              </div>
-            </div>
-          </section>
-
-        </div>
-      </section>
-
-      {/* =====================================================
-          FOOTER
-      ===================================================== */}
-
-      <section
-        className="
-          border-t
-          border-white/[0.06]
-          bg-[#080c08]
-        "
-      >
-        <div
-          className="
-            mx-auto
-            max-w-7xl
-            px-5
-            py-8
-            sm:px-6
-          "
-        >
-          <div
-            className="
-              flex
-              flex-col
-              gap-3
-              sm:flex-row
-              sm:items-center
-              sm:justify-between
-            "
-          >
-            <div>
-              <p className="text-sm font-bold text-white">
-                neverTakeBan
-              </p>
-
-              <p className="mt-1 text-xs text-gray-600">
-                PokeMMO Team
-              </p>
-            </div>
-
-            <p className="text-xs text-gray-700">
-              Guias, estratégias, mapas e informações do time.
-            </p>
           </div>
-        </div>
-      </section>
+
+          <AlteringCave />
+        </section>
+
+        {/* =================================================
+            LATEST SHINIES
+        ================================================= */}
+
+        <section className="pb-24">
+          <div className="mb-6 flex items-end justify-between gap-4">
+            <div>
+              <p
+                className="
+                  text-[10px]
+                  font-black
+                  uppercase
+                  tracking-[0.32em]
+                  text-lime-400
+                "
+              >
+                Atividade do time
+              </p>
+
+              <h2
+                className="
+                  mt-2
+                  text-3xl
+                  font-black
+                  tracking-tight
+                  text-white
+                  sm:text-4xl
+                "
+              >
+                Últimos Shinies
+              </h2>
+
+              <p className="mt-1 text-sm text-gray-500">
+                O shiny mais recente de cada player.
+              </p>
+            </div>
+
+            <div
+              className="
+                hidden
+                rounded-full
+                border
+                border-lime-400/15
+                bg-black/30
+                px-4
+                py-2
+                text-[10px]
+                font-black
+                uppercase
+                tracking-[0.15em]
+                text-gray-500
+                sm:block
+              "
+            >
+              {latestShinies.length} PLAYERS
+            </div>
+          </div>
+
+          <LatestShiniesCarousel shinies={latestShinies} />
+        </section>
+      </div>
     </main>
   );
 }

@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "NeverTakeBan",
-  description: "Time NeverTakeBan",
+  description: "Time NeverTakeBan — PokeMMO",
 };
 
 export default function RootLayout({
@@ -15,74 +16,57 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR">
-      <body>
+      <body className="min-h-screen bg-[#030703] text-white antialiased">
         {/* =====================================================
             HEADER
         ===================================================== */}
-
         <header className="site-header">
           <div className="header-inner">
 
-            {/* LOGO */}
+            {/* =================================================
+                LOGO
+            ================================================= */}
             <Link
               href="/"
+              aria-label="NeverTakeBan"
               className="header-brand"
-              aria-label="neverTakeBan"
             >
               <Image
                 src="/images/ntb-logo.png"
-                alt="neverTakeBan"
-                width={95}
-                height={95}
+                alt="NeverTakeBan"
+                width={190}
+                height={90}
                 priority
                 className="header-logo"
               />
             </Link>
 
-            {/* NAV */}
+            {/* =================================================
+                NAV
+            ================================================= */}
             <nav className="header-nav">
-              <Link href="/">
-                Início
-              </Link>
-
-              <Link href="/farm">
-                Farm
-              </Link>
-
-              <Link href="/hunt">
-                Hunt
-              </Link>
-
-              <Link href="/leaderboard">
-                Leaderboard
-              </Link>
-
-              <Link href="/raid">
-                RAID
-              </Link>
-
-              <Link href="/eventos">
-                Eventos
-              </Link>
-
-              <Link href="/ajuda">
-                Ajuda
-              </Link>
+              <Link href="/shiny">Shiny</Link>
+              <Link href="/eventos">Eventos</Link>
+              <Link href="/leaderboard">Leaderboard</Link>
+              <Link href="/raid">Raids</Link>
+              <Link href="/tools">Tools</Link>
+              <Link href="/members">Members</Link>
             </nav>
 
-            {/* STATUS */}
+            {/* =================================================
+                STATUS
+            ================================================= */}
             <div className="team-status">
               <span className="team-status-dot" />
-              <span>Team Online</span>
+              <span>TEAM ONLINE</span>
             </div>
 
           </div>
         </header>
 
         {/* =====================================================
-            CONTENT
+            PAGE CONTENT
         ===================================================== */}
-
         {children}
       </body>
     </html>
