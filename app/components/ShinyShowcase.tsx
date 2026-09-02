@@ -11,30 +11,17 @@ type Shiny = {
   pokemonId: number | null;
   encounters: number | null;
   caughtAt: string | null;
-
-  // Se não existir no banco, fica false automaticamente.
-  isSecretShiny?: boolean;
 };
 
 type Props = {
   shinies: Shiny[];
 };
 
-
-/* =========================================================
-   SPRITE ANIMADA
-   ========================================================= */
-
-function getAnimatedSpriteUrl(pokemonId: number | null) {
+function getSpriteUrl(pokemonId: number | null) {
   if (!pokemonId) return null;
 
-  return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/showdown/shiny/${pokemonId}.gif`;
+  return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/${pokemonId}.png`;
 }
-
-
-/* =========================================================
-   DATA
-   ========================================================= */
 
 function formatEncounters(value: number | null) {
   if (value === null || value === undefined) {
@@ -44,9 +31,10 @@ function formatEncounters(value: number | null) {
   return value.toLocaleString("pt-BR");
 }
 
-
 function formatDate(value: string | null) {
-  if (!value) return null;
+  if (!value) {
+    return null;
+  }
 
   const date = new Date(value);
 
@@ -57,21 +45,15 @@ function formatDate(value: string | null) {
   return date.toLocaleDateString("pt-BR");
 }
 
-
-/* =========================================================
-   COMPONENT
-   ========================================================= */
-
 export default function ShinyShowcase({
   shinies,
 }: Props) {
   /*
-   * Agrupa por player.
-   *
-   * Depois:
-   * 1. maior quantidade de shinies primeiro;
-   * 2. empate = ordem alfabética.
+   * =========================================================
+   * AGRUPAR POR PLAYER
+   * =========================================================
    */
+
   const players = useMemo(() => {
     const groups = shinies.reduce<Record<string, Shiny[]>>(
       (acc, shiny) => {
@@ -101,12 +83,22 @@ export default function ShinyShowcase({
         ),
       }))
       .sort((a, b) => {
+        /*
+         * Primeiro:
+         * maior quantidade de shinies.
+         */
+
         const countDifference =
           b.shinies.length - a.shinies.length;
 
         if (countDifference !== 0) {
           return countDifference;
         }
+
+        /*
+         * Empate:
+         * ordem alfabética.
+         */
 
         return a.username.localeCompare(
           b.username,
@@ -118,13 +110,12 @@ export default function ShinyShowcase({
       });
   }, [shinies]);
 
-
   return (
     <section className="shiny-showcase">
 
-      {/* ===================================================
+      {/* =====================================================
           HEADER
-      =================================================== */}
+      ===================================================== */}
 
       <header className="shiny-showcase-header">
 
@@ -132,21 +123,21 @@ export default function ShinyShowcase({
           Showcase
         </p>
 
-        <h2>
+        <h1>
           Shinies do time
-        </h2>
+        </h1>
 
-        <span>
-          Coleção de shinies capturados pelos membros do
-          NeverTakeBan.
-        </span>
+        <p>
+          Coleção de shinies capturados pelos membros
+          do NeverTakeBan.
+        </p>
 
       </header>
 
 
-      {/* ===================================================
+      {/* =====================================================
           PLAYERS
-      =================================================== */}
+      ===================================================== */}
 
       {players.length > 0 ? (
 
@@ -159,26 +150,31 @@ export default function ShinyShowcase({
               className="showcase-player"
             >
 
-              {/* =========================================
+              {/* =============================================
                   PLAYER HEADER
-              ========================================= */}
+              ============================================= */}
 
               <div className="showcase-player-header">
 
                 <div className="showcase-player-title">
 
                   <span className="showcase-player-number">
-                    {String(playerIndex + 1).padStart(2, "0")}
+                    {String(
+                      playerIndex + 1
+                    ).padStart(2, "0")}
                   </span>
 
                   <span className="showcase-player-line" />
 
-                  <h3>
+                  <h2>
                     {player.username}
-                  </h3>
+                  </h2>
 
                   <span className="showcase-player-count">
-                    ({player.shinies.length})
+                    {player.shinies.length} shiny
+                    {player.shinies.length !== 1
+                      ? "s"
+                      : ""}
                   </span>
 
                 </div>
@@ -186,9 +182,9 @@ export default function ShinyShowcase({
               </div>
 
 
-              {/* =========================================
+              {/* =============================================
                   SPRITES
-              ========================================= */}
+              ============================================= */}
 
               <div className="showcase-sprite-area">
 
@@ -198,7 +194,7 @@ export default function ShinyShowcase({
                     (shiny, shinyIndex) => {
 
                       const sprite =
-                        getAnimatedSpriteUrl(
+                        getSpriteUrl(
                           shiny.pokemonId
                         );
 
@@ -212,17 +208,11 @@ export default function ShinyShowcase({
                           shiny.caughtAt
                         );
 
-                      const isSecret =
-                        shiny.isSecretShiny === true;
-
-
                       /*
-                       * Os últimos Pokémon da linha
-                       * abrem o card para a esquerda.
-                       *
-                       * Isso evita que o card saia
-                       * da tela.
+                       * Últimos dois da linha:
+                       * card aparece para a esquerda.
                        */
+
                       const positionFromEnd =
                         player.shinies.length -
                         shinyIndex;
@@ -232,106 +222,58 @@ export default function ShinyShowcase({
                           ? "showcase-card-left"
                           : "";
 
-
                       return (
-
                         <article
                           key={shiny.id}
                           className={[
                             "showcase-pokemon",
-
-                            isSecret
-                              ? "showcase-pokemon-secret"
-                              : "",
-
                             cardSide,
                           ].join(" ")}
                         >
 
                           {/* =================================
-                              AURA
+                              SHINY EFFECT
                           ================================= */}
 
-                          <div className="pokemon-hover-light" />
+                          <span
+                            className="shiny-aura"
+                            aria-hidden="true"
+                          />
+
+                          <span
+                            className="shiny-flash"
+                            aria-hidden="true"
+                          />
+
+                          <span
+                            className="shiny-ring"
+                            aria-hidden="true"
+                          />
 
 
                           {/* =================================
-                              PARTÍCULAS
+                              PARTICLES
                           ================================= */}
 
-                          <span
-                            className="pokemon-spark spark-a"
+                          <div
+                            className="shiny-particles"
+                            aria-hidden="true"
                           >
-                            ✦
-                          </span>
 
-                          <span
-                            className="pokemon-spark spark-b"
-                          >
-                            ✧
-                          </span>
+                            <span className="shiny-spark spark-1" />
+                            <span className="shiny-spark spark-2" />
+                            <span className="shiny-spark spark-3" />
+                            <span className="shiny-spark spark-4" />
+                            <span className="shiny-spark spark-5" />
+                            <span className="shiny-spark spark-6" />
+                            <span className="shiny-spark spark-7" />
+                            <span className="shiny-spark spark-8" />
+                            <span className="shiny-spark spark-9" />
+                            <span className="shiny-spark spark-10" />
+                            <span className="shiny-spark spark-11" />
+                            <span className="shiny-spark spark-12" />
 
-                          <span
-                            className="pokemon-spark spark-c"
-                          >
-                            ✦
-                          </span>
-
-                          <span
-                            className="pokemon-spark spark-d"
-                          >
-                            ✧
-                          </span>
-
-                          <span
-                            className="pokemon-spark spark-e"
-                          >
-                            ✦
-                          </span>
-
-                          <span
-                            className="pokemon-spark spark-f"
-                          >
-                            ✧
-                          </span>
-
-
-                          {/* =================================
-                              ESTRELAS
-                          ================================= */}
-
-                          <span className="shiny-star star-1">
-                            ✦
-                          </span>
-
-                          <span className="shiny-star star-2">
-                            ✧
-                          </span>
-
-                          <span className="shiny-star star-3">
-                            ✦
-                          </span>
-
-                          <span className="shiny-star star-4">
-                            ✧
-                          </span>
-
-
-                          {/* =================================
-                              SECRET SHINY
-                          ================================= */}
-
-                          {isSecret && (
-                            <div className="secret-shiny-star">
-
-                              <span className="secret-star-glow" />
-
-                              <span className="secret-star-symbol">
-                                ★
-                              </span>
-
-                            </div>
-                          )}
+                          </div>
 
 
                           {/* =================================
@@ -362,7 +304,7 @@ export default function ShinyShowcase({
 
 
                           {/* =================================
-                              CARD
+                              HOVER CARD
                           ================================= */}
 
                           <div className="showcase-hover-card">
@@ -386,36 +328,27 @@ export default function ShinyShowcase({
 
                               )}
 
-
                               <div className="showcase-hover-title">
 
                                 <strong>
                                   {shiny.displayName}
                                 </strong>
 
-                                {isSecret ? (
-
-                                  <span className="secret-label">
-                                    ★ SECRET SHINY
-                                  </span>
-
-                                ) : (
-
-                                  <span>
-                                    ✦ SHINY
-                                  </span>
-
-                                )}
+                                <span>
+                                  ✦ SHINY
+                                </span>
 
                               </div>
 
                             </div>
 
 
-                            <div className="showcase-hover-separator" />
+                            {(encounters || caughtAt) && (
+                              <div className="showcase-hover-separator" />
+                            )}
 
 
-                            {encounters !== null && (
+                            {encounters && (
 
                               <div className="showcase-hover-stat">
 
@@ -448,23 +381,9 @@ export default function ShinyShowcase({
 
                             )}
 
-
-                            {isSecret && (
-
-                              <div className="showcase-secret-message">
-                                <span>✦</span>
-
-                                <p>
-                                  Secret Shiny
-                                </p>
-                              </div>
-
-                            )}
-
                           </div>
 
                         </article>
-
                       );
                     }
                   )}
@@ -481,15 +400,11 @@ export default function ShinyShowcase({
 
       ) : (
 
-        /* ===============================================
-           EMPTY
-        =============================================== */
-
         <div className="showcase-empty">
 
-          <span>
+          <div className="showcase-empty-icon">
             ✨
-          </span>
+          </div>
 
           <strong>
             Nenhum shiny encontrado
