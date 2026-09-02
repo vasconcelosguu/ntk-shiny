@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import {
   getCategory,
   getChannel,
-} from "../../../lib/team";
+} from "../../../../lib/team";
 
 type RaidChannelPageProps = {
   params: Promise<{

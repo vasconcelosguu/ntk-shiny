@@ -1,157 +1,151 @@
-import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "Never Take Ban | PokeMMO Team",
-  description:
-    "Shinies, eventos, raids, ferramentas e informações do time Never Take Ban.",
-};
+import {
+  getPlayer,
+  getPlayerShinies,
+} from "../../../lib/players";
 
-const navigation = [
-  { label: "Shiny", href: "/shiny" },
-  { label: "Eventos", href: "/eventos" },
-  { label: "Leaderboard", href: "/leaderboard" },
-  { label: "Raids", href: "/raid" },
-  { label: "Tools", href: "/tools" },
-  { label: "Members", href: "/members" },
-];
+function getAvatar(username: string) {
+  return `https://minotar.net/avatar/${encodeURIComponent(username)}/128`;
+}
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default async function MemberPage({
+  params,
+}: {
+  params: Promise<{
+    username: string;
+  }>;
+}) {
+  const { username } = await params;
+
+  const decodedUsername = decodeURIComponent(username);
+
+  const player = await getPlayer(decodedUsername);
+
+  if (!player) {
+    notFound();
+  }
+
+  const shinies =
+    await getPlayerShinies(decodedUsername);
+
   return (
-    <html lang="pt-BR">
-      <body className="min-h-screen bg-[#030603] text-white antialiased">
-        {/* =====================================================
-            HEADER
-        ===================================================== */}
+    <main className="min-h-screen">
+      <section className="mx-auto max-w-7xl px-5 py-12 sm:px-6">
 
-        <header className="sticky top-0 z-50 border-b border-lime-400/[0.08] bg-[#030603]/95 backdrop-blur-xl">
-          <div className="mx-auto flex h-[72px] max-w-[1500px] items-center px-5 lg:px-8">
-            
-            {/* LOGO */}
+        <Link
+          href="/members"
+          className="
+            text-xs
+            font-bold
+            text-gray-600
+            transition
+            hover:text-lime-400
+          "
+        >
+          ← Members
+        </Link>
 
-            <Link
-              href="/"
-              className="
-                group
-                flex
-                h-full
-                w-[190px]
-                shrink-0
-                items-center
-                justify-start
-                border-r
-                border-white/[0.05]
-              "
-            >
-              <img
-                src="/images/ntb-logo.png"
-                alt="Never Take Ban"
-                className="
-                  h-[68px]
-                  w-auto
-                  object-contain
-                  object-left
-                  transition-transform
-                  duration-300
-                  group-hover:scale-[1.03]
-                "
-              />
-            </Link>
+        <div
+          className="
+            mt-8
+            flex
+            flex-col
+            gap-5
+            rounded-2xl
+            border
+            border-white/[0.07]
+            bg-[#0b0f0b]
+            p-6
+            sm:flex-row
+            sm:items-center
+          "
+        >
+          <Image
+            src={getAvatar(player.username)}
+            alt={player.username}
+            width={96}
+            height={96}
+            className="rounded-2xl"
+            unoptimized
+          />
 
-            {/* NAVIGATION */}
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-lime-400">
+              Member
+            </p>
 
-            <nav className="ml-auto flex h-full items-center gap-1">
-              {navigation.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="
-                    relative
-                    flex
-                    h-full
-                    items-center
-                    px-5
-                    text-[13px]
-                    font-black
-                    uppercase
-                    italic
-                    tracking-wide
-                    text-gray-300
-                    transition-all
-                    duration-200
-                    hover:text-lime-400
-                  "
-                >
-                  {item.label}
+            <h1 className="mt-2 text-3xl font-black text-white">
+              {player.username}
+            </h1>
 
-                  <span
-                    className="
-                      absolute
-                      bottom-0
-                      left-1/2
-                      h-[2px]
-                      w-0
-                      -translate-x-1/2
-                      bg-lime-400
-                      shadow-[0_0_12px_rgba(163,230,53,0.8)]
-                      transition-all
-                      duration-300
-                      group-hover:w-full
-                    "
-                  />
-                </Link>
-              ))}
-            </nav>
+            <p className="mt-2 text-sm text-gray-500">
+              {shinies.length} shinies registrados.
+            </p>
+          </div>
+        </div>
 
-            {/* TEAM ONLINE */}
+        <div className="mt-8">
+          <h2 className="text-xl font-black text-white">
+            Shinies
+          </h2>
 
+          {shinies.length === 0 ? (
+            <div className="mt-5 rounded-2xl border border-white/[0.07] bg-[#0b0f0b] p-8">
+              <p className="text-sm text-gray-600">
+                Nenhum shiny encontrado.
+              </p>
+            </div>
+          ) : (
             <div
               className="
-                ml-8
-                hidden
-                h-full
-                items-center
-                border-l
-                border-white/[0.05]
-                pl-8
-                lg:flex
+                mt-5
+                grid
+                grid-cols-2
+                gap-3
+                sm:grid-cols-3
+                md:grid-cols-4
+                lg:grid-cols-5
               "
             >
-              <div
-                className="
-                  flex
-                  items-center
-                  gap-2
-                  rounded-full
-                  border
-                  border-lime-400/20
-                  bg-lime-400/[0.03]
-                  px-4
-                  py-2
-                  text-[9px]
-                  font-black
-                  uppercase
-                  tracking-[0.18em]
-                  text-lime-400
-                "
-              >
-                <span className="h-2 w-2 rounded-full bg-lime-400 shadow-[0_0_10px_rgba(163,230,53,0.8)]" />
-                Team Online
-              </div>
+              {shinies.map((shiny) => (
+                <div
+                  key={shiny.id}
+                  className="
+                    rounded-2xl
+                    border
+                    border-white/[0.07]
+                    bg-[#0b0f0b]
+                    p-5
+                    text-center
+                  "
+                >
+                  {shiny.pokemon_id ? (
+                    <img
+                      src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/${shiny.pokemon_id}.png`}
+                      alt={shiny.display_name}
+                      className="mx-auto h-32 w-32 object-contain"
+                    />
+                  ) : (
+                    <div className="h-32" />
+                  )}
+
+                  <h3 className="mt-3 font-bold text-white">
+                    {shiny.display_name}
+                  </h3>
+
+                  <p className="mt-1 text-xs text-gray-600">
+                    {shiny.encounters?.toLocaleString("pt-BR") ?? "—"} encounters
+                  </p>
+                </div>
+              ))}
             </div>
-          </div>
-        </header>
+          )}
+        </div>
 
-        {/* =====================================================
-            PAGE
-        ===================================================== */}
-
-        {children}
-      </body>
-    </html>
+      </section>
+    </main>
   );
 }

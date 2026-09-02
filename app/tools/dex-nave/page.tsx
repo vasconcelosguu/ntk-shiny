@@ -1,7 +1,7 @@
 import {
   getMapRegions,
   getMapStatistics,
-} from "../../lib/maps";
+} from "../../../lib/maps";
 
 import MapasClient from "./MapasClient";
 

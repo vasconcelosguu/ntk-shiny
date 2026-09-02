@@ -50,7 +50,15 @@ export default function ShinyHuntPage() {
    *
    * 0 bônus  = 1/30000
    * 1 bônus  = 1/27000
-   * 2 bônus  = ~1/24300
+   * 2 bônus  = ~1/2import ShinyHuntSimulator from "../../../components/ShinyHuntSimulator";
+
+export default function ShinyHuntSimulatorPage() {
+  return (
+    <main className="min-h-screen">
+      <ShinyHuntSimulator />
+    </main>
+  );
+}4300
    *
    * Aqui usamos multiplicação de 0.9 por bônus.
    */

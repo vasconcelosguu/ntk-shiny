@@ -1,21 +1,11 @@
-import {
-  getPokemonShinySprite,
-} from "./pokemon";
+import { createClient } from "./supabase/server";
+import { getPokemonShinySprite } from "./pokemon";
 
 export type ShinyEntry = {
   pokemon: string;
   displayName: string;
   encounters: number;
-
-  /*
-   * Primeira URL da sprite.
-   */
   sprite: string | null;
-
-  /*
-   * URLs alternativas caso a primeira
-   * não carregue no navegador.
-   */
   spriteUrls: string[];
 };
 
@@ -24,6 +14,20 @@ export type ShinyBoardProfile = {
   totalShinies: number;
   totalEncounters: number;
   shinies: ShinyEntry[];
+};
+
+/**
+ * Shiny registrado no banco.
+ */
+export type LatestShiny = {
+  id: string;
+  pokemon: string;
+  displayName: string;
+  pokemonId: number | null;
+  encounters: number;
+  caughtAt: string | null;
+  username: string;
+  sprite: string | null;
 };
 
 /**
@@ -42,9 +46,7 @@ function parseNumber(value: string): number {
 /**
  * Normaliza o nome do Pokémon.
  */
-function normalizePokemonName(
-  name: string
-): string {
+function normalizePokemonName(name: string): string {
   return name
     .trim()
     .replace(/♀/g, "-f")
@@ -71,11 +73,9 @@ export async function getShinyBoardProfile(
       next: {
         revalidate: 3600,
       },
-
       headers: {
         "User-Agent":
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/151 Safari/537.36",
-
         Accept:
           "text/html,application/xhtml+xml",
       },
@@ -91,76 +91,74 @@ export async function getShinyBoardProfile(
 
     const html = await response.text();
 
-console.log(
-  `[SHINYBOARD] ${username} status:`,
-  response.status
-);
+    console.log(
+      `[SHINYBOARD] ${username} status:`,
+      response.status
+    );
 
-console.log(
-  `[SHINYBOARD] ${username} HTML length:`,
-  html.length
-);
+    console.log(
+      `[SHINYBOARD] ${username} HTML length:`,
+      html.length
+    );
 
-const parsedShinies = parseShinies(html);
+    const parsedShinies = parseShinies(html);
 
-console.log(
-  `[SHINYBOARD] ${username} parsed shinies:`,
-  parsedShinies.length
-);
+    console.log(
+      `[SHINYBOARD] ${username} parsed shinies:`,
+      parsedShinies.length
+    );
 
-console.log(
-  `[SHINYBOARD] ${username} Pokémon:`,
-  parsedShinies.map(
-    (x) => x.displayName
-  )
-);
-    /*
-     * Depois buscamos as sprites.
-     *
-     * Todas são buscadas em paralelo.
+    console.log(
+      `[SHINYBOARD] ${username} Pokémon:`,
+      parsedShinies.map(
+        (x) => x.displayName
+      )
+    );
+
+    /**
+     * Busca as sprites em paralelo.
      */
-    const shinies =
-      await Promise.all(
-        parsedShinies.map(
-          async (shiny) => {
-            const spriteUrls =
-              await getPokemonShinySprite(
-                shiny.displayName
-              );
-
-            const resolvedSpriteUrls =
-              Array.isArray(spriteUrls)
-                ? spriteUrls
-                : spriteUrls
-                ? [spriteUrls]
-                : [];
-
-            const sprite =
-              resolvedSpriteUrls[0] ?? null;
-
-            console.log(
-              `[SHINY] ${shiny.displayName}`
+    const shinies = await Promise.all(
+      parsedShinies.map(
+        async (shiny) => {
+          const spriteUrls =
+            await getPokemonShinySprite(
+              shiny.displayName
             );
 
-            console.log(
-              `[SHINY] Sprite principal:`,
-              sprite
-            );
+          const resolvedSpriteUrls =
+            Array.isArray(spriteUrls)
+              ? spriteUrls
+              : spriteUrls
+              ? [spriteUrls]
+              : [];
 
-            console.log(
-              `[SHINY] Fallbacks:`,
-              resolvedSpriteUrls
-            );
+          const sprite =
+            resolvedSpriteUrls[0] ?? null;
 
-            return {
-              ...shiny,
-              sprite,
-              spriteUrls:
-                resolvedSpriteUrls,
-            };
-          }
-        )
-      );
+          console.log(
+            `[SHINY] ${shiny.displayName}`
+          );
+
+          console.log(
+            `[SHINY] Sprite principal:`,
+            sprite
+          );
+
+          console.log(
+            `[SHINY] Fallbacks:`,
+            resolvedSpriteUrls
+          );
+
+          return {
+            ...shiny,
+            sprite,
+            spriteUrls:
+              resolvedSpriteUrls,
+          };
+        }
+      )
+    );
 
     const totalEncounters =
       shinies.reduce(
@@ -183,6 +181,111 @@ console.log(
     );
 
     return emptyProfile(username);
+  }
+}
+
+/**
+ * Busca os últimos shinys registrados
+ * no banco de dados.
+ *
+ * IMPORTANTE:
+ * Aqui NÃO fazemos deduplicação.
+ * Cada shiny_entry é um registro independente.
+ */
+export async function getLatestShinies(
+  limit = 10
+): Promise<LatestShiny[]> {
+  try {
+    const supabase =
+      await createClient();
+
+    const {
+      data,
+      error,
+    } = await supabase
+      .from("shiny_entries")
+      .select(
+        `
+          id,
+          pokemon,
+          display_name,
+          pokemon_id,
+          encounters,
+          caught_at,
+          shiny_players!inner (
+            username
+          )
+        `
+      )
+      .order(
+        "caught_at",
+        {
+          ascending: false,
+        }
+      )
+      .limit(limit);
+
+    if (error) {
+      console.error(
+        "[SHINYBOARD] Erro buscando últimos shinys:",
+        error
+      );
+
+      return [];
+    }
+
+    return (data ?? []).map(
+      (entry: any) => {
+        const player =
+          Array.isArray(
+            entry.shiny_players
+          )
+            ? entry.shiny_players[0]
+            : entry.shiny_players;
+
+        const pokemonId =
+          entry.pokemon_id
+            ? Number(entry.pokemon_id)
+            : null;
+
+        return {
+          id: String(entry.id),
+
+          pokemon:
+            entry.pokemon ?? "",
+
+          displayName:
+            entry.display_name ??
+            entry.pokemon ??
+            "Unknown",
+
+          pokemonId,
+
+          encounters:
+            Number(
+              entry.encounters ?? 0
+            ),
+
+          caughtAt:
+            entry.caught_at ?? null,
+
+          username:
+            player?.username ??
+            "Unknown",
+
+          sprite: pokemonId
+            ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/${pokemonId}.png`
+            : null,
+        };
+      }
+    );
+  } catch (error) {
+    console.error(
+      "[SHINYBOARD] Erro inesperado buscando últimos shinys:",
+      error
+    );
+
+    return [];
   }
 }
 
@@ -214,7 +317,9 @@ function parseShinies(
   const cellRegex =
     /<t[dh][^>]*>([\s\S]*?)<\/t[dh]>/gi;
 
-  let rowMatch: RegExpExecArray | null;
+  let rowMatch:
+    | RegExpExecArray
+    | null;
 
   while (
     (rowMatch =
@@ -245,7 +350,7 @@ function parseShinies(
       }
     }
 
-    /*
+    /**
      * Precisamos de pelo menos
      * nome + encounters.
      */
@@ -259,7 +364,7 @@ function parseShinies(
     const encountersText =
       cells[cells.length - 1];
 
-    /*
+    /**
      * Ignorar cabeçalhos.
      */
     const lowerName =
@@ -272,7 +377,7 @@ function parseShinies(
       continue;
     }
 
-    /*
+    /**
      * Evita pegar linhas que claramente
      * não são Pokémon.
      */
@@ -368,7 +473,8 @@ function isLikelyPokemonName(
 }
 
 /**
- * Remove Pokémon duplicados.
+ * Remove Pokémon duplicados
+ * dentro do HTML de UM perfil.
  */
 function deduplicateShinies(
   shinies: ShinyEntry[]

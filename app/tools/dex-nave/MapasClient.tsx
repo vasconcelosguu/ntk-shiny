@@ -7,7 +7,7 @@ import type {
   MapEncounter,
   MapRegion,
   MapLocation,
-} from "../../lib/maps";
+} from "../../../lib/maps";
 
 /* =========================================================
    TYPES
