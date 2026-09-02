@@ -1,17 +1,16 @@
 import ShinyShowcase from "../components/ShinyShowcase";
-import {
-  getShowcaseShinies,
-} from "../../lib/shiny-ownership";
+import { getShowcaseShinies } from "../../lib/shiny-ownership";
 
 export const revalidate = 60;
 
 export default async function ShinyPage() {
-  const shinies =
-    await getShowcaseShinies();
+  const shinies = await getShowcaseShinies();
 
   return (
     <main className="min-h-screen bg-[#030603] text-white">
+
       <section className="relative overflow-hidden border-b border-white/[0.06]">
+
         <div
           className="
             pointer-events-none
@@ -36,6 +35,7 @@ export default async function ShinyPage() {
             py-16
           "
         >
+
           <p className="text-[10px] font-black uppercase tracking-[0.3em] text-lime-400">
             NeverTakeBan
           </p>
@@ -45,11 +45,12 @@ export default async function ShinyPage() {
           </h1>
 
           <p className="mt-4 max-w-2xl text-sm leading-7 text-gray-500">
-            Confira todos os shinies capturados
-            pelos membros do NeverTakeBan.
+            Confira todos os shinies capturados pelos membros do
+            NeverTakeBan.
           </p>
 
           <div className="mt-8 flex flex-wrap gap-3">
+
             <div
               className="
                 rounded-xl
@@ -84,17 +85,17 @@ export default async function ShinyPage() {
               </p>
 
               <p className="mt-1 text-sm font-black text-lime-400">
-                {shinies[0]?.displayName ??
-                  "Nenhum"}
+                {shinies[0]?.displayName ?? "Nenhum"}
               </p>
             </div>
+
           </div>
         </div>
+
       </section>
 
-      <ShinyShowcase
-        shinies={shinies}
-      />
+      <ShinyShowcase shinies={shinies} />
+
     </main>
   );
 }
