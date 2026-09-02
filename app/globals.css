@@ -953,3 +953,1754 @@ a {
   }
 }
 
+/* =========================================================
+   SHINY SHOWCASE
+   ========================================================= */
+
+.shiny-showcase {
+  width: 100%;
+  max-width: 1500px;
+
+  margin: 0 auto;
+
+  padding:
+    42px
+    28px
+    100px;
+}
+
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+
+.shiny-showcase-header {
+  margin-bottom: 34px;
+}
+
+
+.shiny-showcase-kicker {
+  margin: 0;
+
+  font-size: 10px;
+  font-weight: 900;
+
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+
+  color: #a3e635;
+}
+
+
+.shiny-showcase-header h2 {
+  margin: 7px 0 0;
+
+  font-size: 30px;
+  line-height: 1;
+
+  font-weight: 900;
+
+  letter-spacing: -0.04em;
+
+  color: #f5f7f5;
+}
+
+
+.shiny-showcase-header > span {
+  display: block;
+
+  margin-top: 9px;
+
+  font-size: 13px;
+
+  color: #596159;
+}
+
+
+/* =========================================================
+   PLAYERS
+   ========================================================= */
+
+.shiny-showcase-players {
+  display: flex;
+  flex-direction: column;
+
+  gap: 28px;
+}
+
+
+/* =========================================================
+   PLAYER
+   ========================================================= */
+
+.showcase-player {
+  position: relative;
+
+  width: 100%;
+}
+
+
+/* =========================================================
+   PLAYER HEADER
+   ========================================================= */
+
+.showcase-player-header {
+  position: relative;
+
+  z-index: 200;
+
+  height: 28px;
+
+  display: flex;
+  align-items: center;
+
+  padding-left: 4px;
+}
+
+
+.showcase-player-title {
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+}
+
+
+.showcase-player-number {
+  font-size: 8px;
+  font-weight: 900;
+
+  letter-spacing: 0.12em;
+
+  color: #323932;
+}
+
+
+.showcase-player-line {
+  width: 18px;
+  height: 1px;
+
+  background:
+    rgba(163, 230, 53, 0.65);
+
+  box-shadow:
+    0 0 8px
+    rgba(163, 230, 53, 0.25);
+}
+
+
+.showcase-player-title h3 {
+  margin: 0;
+
+  font-size: 13px;
+  font-weight: 900;
+
+  color: #dce2dc;
+}
+
+
+.showcase-player-count {
+  font-size: 10px;
+  font-weight: 800;
+
+  color: #555d55;
+}
+
+
+/* =========================================================
+   ÁREA
+   ========================================================= */
+
+.showcase-sprite-area {
+  position: relative;
+
+  width: 100%;
+
+  overflow: visible;
+
+  margin-top: 2px;
+}
+
+
+/* =========================================================
+   TRACK
+   ========================================================= */
+
+.showcase-sprite-track {
+  position: relative;
+
+  width: 100%;
+
+  display: flex;
+
+  flex-wrap: wrap;
+
+  align-items: center;
+
+  justify-content: flex-start;
+
+  column-gap: 2px;
+  row-gap: 0;
+
+  padding:
+    0
+    8px
+    5px;
+}
+
+
+/* =========================================================
+   POKEMON
+   ========================================================= */
+
+.showcase-pokemon {
+  position: relative;
+
+  width: 112px;
+  min-width: 112px;
+
+  height: 112px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  isolation: isolate;
+
+  cursor: pointer;
+
+  z-index: 1;
+
+  /*
+   * Importante para o card:
+   */
+  overflow: visible;
+
+  transition:
+    z-index 0s linear 250ms;
+}
+
+
+.showcase-pokemon:hover {
+  z-index: 500;
+}
+
+
+/* =========================================================
+   CONTAINER DA SPRITE
+   ========================================================= */
+
+.showcase-sprite-container {
+  position: relative;
+
+  width: 100px;
+  height: 100px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  z-index: 10;
+
+  pointer-events: none;
+}
+
+
+/* =========================================================
+   SPRITE GIF
+   ========================================================= */
+
+.showcase-pokemon-sprite {
+  position: relative;
+
+  width: 94px;
+  height: 94px;
+
+  object-fit: contain;
+
+  user-select: none;
+
+  image-rendering: auto;
+
+  transform:
+    translate3d(0, 0, 0)
+    scale(1);
+
+  filter:
+    drop-shadow(
+      0 8px 5px
+      rgba(0, 0, 0, 0.55)
+    );
+
+  transition:
+    transform
+      420ms
+      cubic-bezier(
+        0.16,
+        1,
+        0.3,
+        1
+      ),
+
+    filter
+      420ms
+      ease;
+}
+
+
+/* =========================================================
+   FLUTUAÇÃO
+   ========================================================= */
+
+.showcase-pokemon:nth-child(3n + 1)
+.showcase-pokemon-sprite {
+  animation:
+    showcase-float-a
+    4.6s
+    ease-in-out
+    infinite;
+}
+
+
+.showcase-pokemon:nth-child(3n + 2)
+.showcase-pokemon-sprite {
+  animation:
+    showcase-float-b
+    5.2s
+    ease-in-out
+    infinite;
+}
+
+
+.showcase-pokemon:nth-child(3n)
+.showcase-pokemon-sprite {
+  animation:
+    showcase-float-c
+    4.9s
+    ease-in-out
+    infinite;
+}
+
+
+@keyframes showcase-float-a {
+
+  0%,
+  100% {
+    transform:
+      translateY(2px)
+      rotate(-0.5deg);
+  }
+
+  50% {
+    transform:
+      translateY(-4px)
+      rotate(0.5deg);
+  }
+}
+
+
+@keyframes showcase-float-b {
+
+  0%,
+  100% {
+    transform:
+      translateY(-1px)
+      rotate(0.5deg);
+  }
+
+  50% {
+    transform:
+      translateY(4px)
+      rotate(-0.5deg);
+  }
+}
+
+
+@keyframes showcase-float-c {
+
+  0%,
+  100% {
+    transform:
+      translateY(2px);
+  }
+
+  50% {
+    transform:
+      translateY(-5px);
+  }
+}
+
+
+/* =========================================================
+   HOVER DA SPRITE
+   ========================================================= */
+
+.showcase-pokemon:hover
+.showcase-pokemon-sprite {
+
+  animation: none;
+
+  transform:
+    translateY(-7px)
+    scale(1.28);
+
+  filter:
+
+    drop-shadow(
+      0 12px 8px
+      rgba(0, 0, 0, 0.7)
+    )
+
+    drop-shadow(
+      0 0 2px
+      rgba(255, 255, 255, 1)
+    )
+
+    drop-shadow(
+      0 0 6px
+      rgba(255, 255, 245, 0.95)
+    )
+
+    drop-shadow(
+      0 0 13px
+      rgba(255, 241, 174, 0.85)
+    )
+
+    drop-shadow(
+      0 0 24px
+      rgba(213, 255, 122, 0.45)
+    );
+}
+
+
+/* =========================================================
+   AURA
+   ========================================================= */
+
+.pokemon-hover-light {
+  position: absolute;
+
+  left: 50%;
+  top: 50%;
+
+  width: 42px;
+  height: 42px;
+
+  transform:
+    translate(-50%, -50%)
+    scale(0.5);
+
+  border-radius: 50%;
+
+  background:
+    radial-gradient(
+      circle,
+      rgba(255, 255, 255, 0.38) 0%,
+      rgba(255, 247, 191, 0.23) 20%,
+      rgba(218, 255, 130, 0.12) 42%,
+      transparent 72%
+    );
+
+  filter: blur(10px);
+
+  opacity: 0;
+
+  z-index: 2;
+
+  pointer-events: none;
+
+  transition:
+    opacity 350ms ease,
+
+    transform
+      600ms
+      cubic-bezier(
+        0.16,
+        1,
+        0.3,
+        1
+      );
+}
+
+
+.showcase-pokemon:hover
+.pokemon-hover-light {
+  opacity: 1;
+
+  transform:
+    translate(-50%, -50%)
+    scale(2.4);
+
+  animation:
+    showcase-aura-pulse
+    1.4s
+    ease-in-out
+    infinite;
+}
+
+
+@keyframes showcase-aura-pulse {
+
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+
+  50% {
+    opacity: 0.9;
+  }
+}
+
+
+/* =========================================================
+   SPARKLES
+   ========================================================= */
+
+.pokemon-spark {
+  position: absolute;
+
+  z-index: 40;
+
+  color: white;
+
+  font-size: 10px;
+  line-height: 1;
+
+  opacity: 0;
+
+  pointer-events: none;
+
+  text-shadow:
+    0 0 3px white,
+    0 0 7px #fff6bd,
+    0 0 14px #dfff72;
+}
+
+
+/* posições */
+
+.spark-a {
+  left: 20px;
+  top: 31px;
+}
+
+.spark-b {
+  right: 20px;
+  top: 27px;
+}
+
+.spark-c {
+  left: 24px;
+  bottom: 28px;
+}
+
+.spark-d {
+  right: 20px;
+  bottom: 25px;
+}
+
+.spark-e {
+  left: 50px;
+  top: 17px;
+}
+
+.spark-f {
+  right: 48px;
+  bottom: 18px;
+}
+
+
+/* =========================================================
+   ANIMAÇÕES
+   ========================================================= */
+
+.showcase-pokemon:hover
+.spark-a {
+  animation:
+    shiny-spark-a
+    1.05s
+    ease-out
+    infinite;
+}
+
+
+.showcase-pokemon:hover
+.spark-b {
+  animation:
+    shiny-spark-b
+    1.3s
+    ease-out
+    infinite;
+}
+
+
+.showcase-pokemon:hover
+.spark-c {
+  animation:
+    shiny-spark-c
+    1.15s
+    ease-out
+    infinite;
+}
+
+
+.showcase-pokemon:hover
+.spark-d {
+  animation:
+    shiny-spark-d
+    1.4s
+    ease-out
+    infinite;
+}
+
+
+.showcase-pokemon:hover
+.spark-e {
+  animation:
+    shiny-spark-e
+    0.95s
+    ease-out
+    infinite;
+}
+
+
+.showcase-pokemon:hover
+.spark-f {
+  animation:
+    shiny-spark-f
+    1.2s
+    ease-out
+    infinite;
+}
+
+
+/* =========================================================
+   SPARK A
+   ========================================================= */
+
+@keyframes shiny-spark-a {
+
+  0% {
+    opacity: 0;
+
+    transform:
+      translate(0, 0)
+      scale(0)
+      rotate(0deg);
+  }
+
+  15% {
+    opacity: 1;
+
+    transform:
+      translate(-2px, -2px)
+      scale(1.4)
+      rotate(20deg);
+  }
+
+  45% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+
+    transform:
+      translate(-20px, -25px)
+      scale(0.15)
+      rotate(110deg);
+  }
+}
+
+
+/* =========================================================
+   SPARK B
+   ========================================================= */
+
+@keyframes shiny-spark-b {
+
+  0% {
+    opacity: 0;
+
+    transform:
+      translate(0, 0)
+      scale(0);
+  }
+
+  20% {
+    opacity: 1;
+
+    transform:
+      scale(1.5)
+      rotate(25deg);
+  }
+
+  50% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+
+    transform:
+      translate(22px, -27px)
+      scale(0.15)
+      rotate(120deg);
+  }
+}
+
+
+/* =========================================================
+   SPARK C
+   ========================================================= */
+
+@keyframes shiny-spark-c {
+
+  0% {
+    opacity: 0;
+
+    transform:
+      translate(0, 0)
+      scale(0);
+  }
+
+  18% {
+    opacity: 1;
+
+    transform:
+      scale(1.5);
+  }
+
+  100% {
+    opacity: 0;
+
+    transform:
+      translate(-26px, 20px)
+      scale(0)
+      rotate(100deg);
+  }
+}
+
+
+/* =========================================================
+   SPARK D
+   ========================================================= */
+
+@keyframes shiny-spark-d {
+
+  0% {
+    opacity: 0;
+
+    transform:
+      translate(0, 0)
+      scale(0);
+  }
+
+  20% {
+    opacity: 1;
+
+    transform:
+      scale(1.5);
+  }
+
+  100% {
+    opacity: 0;
+
+    transform:
+      translate(26px, 20px)
+      scale(0)
+      rotate(-100deg);
+  }
+}
+
+
+/* =========================================================
+   SPARK E
+   ========================================================= */
+
+@keyframes shiny-spark-e {
+
+  0% {
+    opacity: 0;
+
+    transform:
+      translate(0, 0)
+      scale(0);
+  }
+
+  20% {
+    opacity: 1;
+
+    transform:
+      scale(1.7);
+  }
+
+  100% {
+    opacity: 0;
+
+    transform:
+      translate(0, -31px)
+      scale(0)
+      rotate(100deg);
+  }
+}
+
+
+/* =========================================================
+   SPARK F
+   ========================================================= */
+
+@keyframes shiny-spark-f {
+
+  0% {
+    opacity: 0;
+
+    transform:
+      translate(0, 0)
+      scale(0);
+  }
+
+  20% {
+    opacity: 1;
+
+    transform:
+      scale(1.5);
+  }
+
+  100% {
+    opacity: 0;
+
+    transform:
+      translate(9px, 31px)
+      scale(0)
+      rotate(-100deg);
+  }
+}
+
+
+/* =========================================================
+   ESTRELAS MAIORES
+   ========================================================= */
+
+.shiny-star {
+  position: absolute;
+
+  z-index: 45;
+
+  color: white;
+
+  font-size: 14px;
+
+  opacity: 0;
+
+  pointer-events: none;
+
+  text-shadow:
+    0 0 4px white,
+    0 0 8px #fff4ae,
+    0 0 17px #dfff72;
+}
+
+
+.star-1 {
+  left: 24px;
+  top: 42px;
+}
+
+
+.star-2 {
+  right: 25px;
+  top: 38px;
+}
+
+
+.star-3 {
+  left: 28px;
+  bottom: 36px;
+}
+
+
+.star-4 {
+  right: 25px;
+  bottom: 33px;
+}
+
+
+.showcase-pokemon:hover
+.star-1 {
+  animation:
+    shiny-star-animation-1
+    1.4s
+    ease-out
+    infinite;
+}
+
+
+.showcase-pokemon:hover
+.star-2 {
+  animation:
+    shiny-star-animation-2
+    1.6s
+    ease-out
+    infinite;
+}
+
+
+.showcase-pokemon:hover
+.star-3 {
+  animation:
+    shiny-star-animation-3
+    1.3s
+    ease-out
+    infinite;
+}
+
+
+.showcase-pokemon:hover
+.star-4 {
+  animation:
+    shiny-star-animation-4
+    1.7s
+    ease-out
+    infinite;
+}
+
+
+@keyframes shiny-star-animation-1 {
+
+  0%,
+  100% {
+    opacity: 0;
+
+    transform:
+      scale(0)
+      rotate(0deg);
+  }
+
+  20% {
+    opacity: 1;
+
+    transform:
+      scale(1.3)
+      rotate(20deg);
+  }
+
+  50% {
+    opacity: 0.9;
+  }
+
+  100% {
+    transform:
+      translate(-20px, -30px)
+      scale(0)
+      rotate(120deg);
+  }
+}
+
+
+@keyframes shiny-star-animation-2 {
+
+  0%,
+  100% {
+    opacity: 0;
+
+    transform:
+      scale(0)
+      rotate(0deg);
+  }
+
+  20% {
+    opacity: 1;
+
+    transform:
+      scale(1.4)
+      rotate(-20deg);
+  }
+
+  100% {
+    transform:
+      translate(23px, -29px)
+      scale(0)
+      rotate(-120deg);
+  }
+}
+
+
+@keyframes shiny-star-animation-3 {
+
+  0%,
+  100% {
+    opacity: 0;
+
+    transform:
+      scale(0);
+  }
+
+  20% {
+    opacity: 1;
+
+    transform:
+      scale(1.35);
+  }
+
+  100% {
+    transform:
+      translate(-25px, 23px)
+      scale(0)
+      rotate(100deg);
+  }
+}
+
+
+@keyframes shiny-star-animation-4 {
+
+  0%,
+  100% {
+    opacity: 0;
+
+    transform:
+      scale(0);
+  }
+
+  20% {
+    opacity: 1;
+
+    transform:
+      scale(1.4);
+  }
+
+  100% {
+    transform:
+      translate(27px, 22px)
+      scale(0)
+      rotate(-110deg);
+  }
+}
+
+
+/* =========================================================
+   SECRET SHINY
+   ========================================================= */
+
+.secret-shiny-star {
+  position: absolute;
+
+  left: 50%;
+  top: 11px;
+
+  width: 38px;
+  height: 38px;
+
+  z-index: 70;
+
+  transform:
+    translate(-50%, 5px)
+    scale(0)
+    rotate(-25deg);
+
+  opacity: 0;
+
+  pointer-events: none;
+}
+
+
+.showcase-pokemon-secret:hover
+.secret-shiny-star {
+  opacity: 1;
+
+  transform:
+    translate(-50%, -6px)
+    scale(1)
+    rotate(0deg);
+
+  animation:
+    secret-star-float
+    1.5s
+    ease-in-out
+    infinite;
+}
+
+
+.secret-star-symbol {
+  position: absolute;
+
+  left: 50%;
+  top: 50%;
+
+  transform:
+    translate(-50%, -50%);
+
+  font-size: 27px;
+
+  color: #fff7b0;
+
+  text-shadow:
+    0 0 3px white,
+    0 0 8px #fff2a3,
+    0 0 17px #e1ff73,
+    0 0 30px rgba(163, 230, 53, 0.8);
+}
+
+
+.secret-star-glow {
+  position: absolute;
+
+  left: 50%;
+  top: 50%;
+
+  width: 20px;
+  height: 20px;
+
+  transform:
+    translate(-50%, -50%);
+
+  border-radius: 50%;
+
+  background:
+    rgba(255, 244, 145, 0.55);
+
+  filter: blur(10px);
+
+  animation:
+    secret-star-glow
+    1.3s
+    ease-in-out
+    infinite;
+}
+
+
+@keyframes secret-star-float {
+
+  0%,
+  100% {
+    transform:
+      translate(-50%, -5px)
+      scale(1)
+      rotate(-8deg);
+  }
+
+  50% {
+    transform:
+      translate(-50%, -11px)
+      scale(1.13)
+      rotate(8deg);
+  }
+}
+
+
+@keyframes secret-star-glow {
+
+  0%,
+  100% {
+    opacity: 0.4;
+
+    transform:
+      translate(-50%, -50%)
+      scale(0.8);
+  }
+
+  50% {
+    opacity: 0.9;
+
+    transform:
+      translate(-50%, -50%)
+      scale(1.35);
+  }
+}
+
+
+/* =========================================================
+   SECRET SHINY - AURA MAIS FORTE
+   ========================================================= */
+
+.showcase-pokemon-secret:hover
+.showcase-pokemon-sprite {
+
+  filter:
+
+    drop-shadow(
+      0 12px 8px
+      rgba(0, 0, 0, 0.7)
+    )
+
+    drop-shadow(
+      0 0 3px white
+    )
+
+    drop-shadow(
+      0 0 8px #fff3a5
+    )
+
+    drop-shadow(
+      0 0 17px #e0ff78
+    )
+
+    drop-shadow(
+      0 0 32px
+      rgba(163, 230, 53, 0.6)
+    );
+}
+
+
+/* =========================================================
+   CARD
+   ========================================================= */
+
+.showcase-hover-card {
+  position: absolute;
+
+  left: calc(100% - 12px);
+  top: 50%;
+
+  width: 215px;
+
+  padding: 11px;
+
+  z-index: 1000;
+
+  opacity: 0;
+
+  pointer-events: none;
+
+  transform:
+    translate(
+      0,
+      -50%
+    )
+    translateX(-10px)
+    scale(0.94);
+
+  transform-origin:
+    left center;
+
+  border:
+    1px solid
+    rgba(255, 255, 255, 0.1);
+
+  border-radius: 13px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(14, 19, 14, 0.98),
+      rgba(4, 7, 4, 0.99)
+    );
+
+  box-shadow:
+
+    0 20px 50px
+    rgba(0, 0, 0, 0.8),
+
+    0 0 30px
+    rgba(163, 230, 53, 0.08);
+
+  backdrop-filter:
+    blur(16px);
+
+  transition:
+
+    opacity
+      180ms
+      ease,
+
+    transform
+      300ms
+      cubic-bezier(
+        0.16,
+        1,
+        0.3,
+        1
+      );
+}
+
+
+.showcase-pokemon:hover
+.showcase-hover-card {
+
+  opacity: 1;
+
+  transform:
+    translate(
+      0,
+      -50%
+    )
+    translateX(0)
+    scale(1);
+}
+
+
+/* =========================================================
+   CARD À ESQUERDA
+   ========================================================= */
+
+.showcase-card-left
+.showcase-hover-card {
+
+  left: auto;
+
+  right: calc(100% - 12px);
+
+  transform:
+    translate(
+      0,
+      -50%
+    )
+    translateX(10px)
+    scale(0.94);
+
+  transform-origin:
+    right center;
+}
+
+
+.showcase-card-left:hover
+.showcase-hover-card,
+.showcase-card-left:hover
+.showcase-hover-card {
+
+  transform:
+    translate(
+      0,
+      -50%
+    )
+    translateX(0)
+    scale(1);
+}
+
+
+/* =========================================================
+   SETA DO CARD
+   ========================================================= */
+
+.showcase-hover-card::before {
+  content: "";
+
+  position: absolute;
+
+  left: -5px;
+  top: 50%;
+
+  width: 9px;
+  height: 9px;
+
+  transform:
+    translateY(-50%)
+    rotate(45deg);
+
+  background: #080c08;
+
+  border-left:
+    1px solid
+    rgba(255, 255, 255, 0.1);
+
+  border-bottom:
+    1px solid
+    rgba(255, 255, 255, 0.1);
+}
+
+
+.showcase-card-left
+.showcase-hover-card::before {
+
+  left: auto;
+
+  right: -5px;
+
+  border-left: none;
+
+  border-bottom: none;
+
+  border-right:
+    1px solid
+    rgba(255, 255, 255, 0.1);
+
+  border-top:
+    1px solid
+    rgba(255, 255, 255, 0.1);
+}
+
+
+/* =========================================================
+   CARD HEADER
+   ========================================================= */
+
+.showcase-hover-card-header {
+  display: flex;
+
+  align-items: center;
+
+  gap: 9px;
+}
+
+
+.showcase-hover-mini {
+  width: 50px;
+  height: 50px;
+
+  flex-shrink: 0;
+
+  object-fit: contain;
+
+  filter:
+    drop-shadow(
+      0 0 7px
+      rgba(225, 255, 135, 0.25)
+    );
+}
+
+
+.showcase-hover-mini-placeholder {
+  width: 50px;
+  height: 50px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 9px;
+
+  background:
+    rgba(255, 255, 255, 0.025);
+
+  color: #394039;
+}
+
+
+/* =========================================================
+   CARD TITLE
+   ========================================================= */
+
+.showcase-hover-title {
+  min-width: 0;
+}
+
+
+.showcase-hover-title strong {
+  display: block;
+
+  max-width: 130px;
+
+  overflow: hidden;
+
+  white-space: nowrap;
+
+  text-overflow: ellipsis;
+
+  font-size: 12px;
+
+  font-weight: 900;
+
+  color: #f3f6f3;
+}
+
+
+.showcase-hover-title span {
+  display: block;
+
+  margin-top: 4px;
+
+  font-size: 8px;
+
+  font-weight: 900;
+
+  letter-spacing: 0.1em;
+
+  color: #a3e635;
+}
+
+
+.showcase-hover-title
+.secret-label {
+
+  color: #fff0a3;
+
+  text-shadow:
+    0 0 6px
+    rgba(255, 239, 150, 0.8);
+}
+
+
+/* =========================================================
+   SEPARADOR
+   ========================================================= */
+
+.showcase-hover-separator {
+  width: 100%;
+  height: 1px;
+
+  margin: 8px 0;
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.1),
+      transparent
+    );
+}
+
+
+/* =========================================================
+   STATS
+   ========================================================= */
+
+.showcase-hover-stat {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 10px;
+
+  margin-top: 5px;
+}
+
+
+.showcase-hover-stat span {
+  font-size: 9px;
+
+  color: #596159;
+}
+
+
+.showcase-hover-stat strong {
+  font-size: 9px;
+
+  color: #c5ccc5;
+}
+
+
+/* =========================================================
+   SECRET MESSAGE
+   ========================================================= */
+
+.showcase-secret-message {
+  display: flex;
+
+  align-items: center;
+
+  gap: 6px;
+
+  margin-top: 9px;
+
+  padding-top: 8px;
+
+  border-top:
+    1px solid
+    rgba(255, 235, 130, 0.08);
+}
+
+
+.showcase-secret-message span {
+  font-size: 11px;
+
+  color: #fff0a0;
+
+  text-shadow:
+    0 0 7px
+    rgba(255, 239, 140, 0.8);
+}
+
+
+.showcase-secret-message p {
+  margin: 0;
+
+  font-size: 8px;
+
+  font-weight: 900;
+
+  letter-spacing: 0.12em;
+
+  text-transform: uppercase;
+
+  color: #c9bd78;
+}
+
+
+/* =========================================================
+   SPRITE AUSENTE
+   ========================================================= */
+
+.showcase-missing-sprite {
+  font-size: 24px;
+
+  font-weight: 900;
+
+  color: #303830;
+}
+
+
+/* =========================================================
+   EMPTY
+   ========================================================= */
+
+.showcase-empty {
+  padding: 80px 20px;
+
+  text-align: center;
+
+  border:
+    1px dashed
+    rgba(255, 255, 255, 0.07);
+
+  border-radius: 18px;
+}
+
+
+.showcase-empty > span {
+  display: block;
+
+  font-size: 38px;
+}
+
+
+.showcase-empty strong {
+  display: block;
+
+  margin-top: 12px;
+
+  font-size: 15px;
+
+  color: white;
+}
+
+
+.showcase-empty p {
+  margin-top: 5px;
+
+  font-size: 12px;
+
+  color: #4b554b;
+}
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 700px) {
+
+  .shiny-showcase {
+    padding:
+      32px
+      12px
+      70px;
+  }
+
+
+  .showcase-sprite-track {
+    padding-left: 0;
+    padding-right: 0;
+
+    column-gap: 0;
+  }
+
+
+  .showcase-pokemon {
+    width: 92px;
+    min-width: 92px;
+
+    height: 100px;
+  }
+
+
+  .showcase-sprite-container {
+    width: 86px;
+    height: 86px;
+  }
+
+
+  .showcase-pokemon-sprite {
+    width: 82px;
+    height: 82px;
+  }
+
+
+  /*
+   * No celular o card aparece abaixo.
+   */
+
+  .showcase-hover-card,
+  .showcase-card-left
+  .showcase-hover-card {
+
+    left: 50%;
+    right: auto;
+
+    top: calc(100% - 4px);
+
+    width: 195px;
+
+    transform:
+      translate(
+        -50%,
+        -8px
+      )
+      scale(0.94);
+
+    transform-origin:
+      top center;
+  }
+
+
+  .showcase-pokemon:hover
+  .showcase-hover-card {
+
+    transform:
+      translate(
+        -50%,
+        0
+      )
+      scale(1);
+  }
+
+
+  .showcase-hover-card::before,
+  .showcase-card-left
+  .showcase-hover-card::before {
+
+    left: 50%;
+    right: auto;
+
+    top: -5px;
+
+    transform:
+      translateX(-50%)
+      rotate(45deg);
+
+    border-right: none;
+    border-bottom: none;
+
+    border-left:
+      1px solid
+      rgba(255, 255, 255, 0.1);
+
+    border-top:
+      1px solid
+      rgba(255, 255, 255, 0.1);
+  }
+}
+
+
+/* =========================================================
+   REDUÇÃO DE MOVIMENTO
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+  .showcase-pokemon-sprite,
+  .pokemon-spark,
+  .shiny-star,
+  .secret-shiny-star,
+  .secret-star-glow,
+  .pokemon-hover-light {
+
+    animation: none !important;
+
+    transition: none !important;
+  }
+
+}

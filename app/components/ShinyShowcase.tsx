@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { useMemo } from "react";
 
 type Shiny = {
   id: string;
@@ -11,232 +11,496 @@ type Shiny = {
   pokemonId: number | null;
   encounters: number | null;
   caughtAt: string | null;
+
+  // Se não existir no banco, fica false automaticamente.
+  isSecretShiny?: boolean;
 };
 
 type Props = {
   shinies: Shiny[];
 };
 
-function getSpriteUrl(pokemonId: number | null) {
+
+/* =========================================================
+   SPRITE ANIMADA
+   ========================================================= */
+
+function getAnimatedSpriteUrl(pokemonId: number | null) {
   if (!pokemonId) return null;
 
-  return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/shiny/${pokemonId}.png`;
+  return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/showdown/shiny/${pokemonId}.gif`;
 }
 
-function formatDate(date: string | null) {
-  if (!date) return "";
 
-  const parsed = new Date(date);
+/* =========================================================
+   DATA
+   ========================================================= */
 
-  if (Number.isNaN(parsed.getTime())) {
-    return "";
+function formatEncounters(value: number | null) {
+  if (value === null || value === undefined) {
+    return null;
   }
 
-  return parsed.toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
+  return value.toLocaleString("pt-BR");
 }
 
-export default function ShinyShowcase({ shinies }: Props) {
-  return (
-    <section className="mx-auto max-w-7xl px-5 py-12 sm:px-6 sm:py-16">
-      
-      {/* HEADER */}
 
-      <div className="mb-8">
-        <p className="text-[10px] font-black uppercase tracking-[0.25em] text-lime-400">
+function formatDate(value: string | null) {
+  if (!value) return null;
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  return date.toLocaleDateString("pt-BR");
+}
+
+
+/* =========================================================
+   COMPONENT
+   ========================================================= */
+
+export default function ShinyShowcase({
+  shinies,
+}: Props) {
+  /*
+   * Agrupa por player.
+   *
+   * Depois:
+   * 1. maior quantidade de shinies primeiro;
+   * 2. empate = ordem alfabética.
+   */
+  const players = useMemo(() => {
+    const groups = shinies.reduce<Record<string, Shiny[]>>(
+      (acc, shiny) => {
+        if (!acc[shiny.username]) {
+          acc[shiny.username] = [];
+        }
+
+        acc[shiny.username].push(shiny);
+
+        return acc;
+      },
+      {}
+    );
+
+    return Object.entries(groups)
+      .map(([username, playerShinies]) => ({
+        username,
+
+        shinies: [...playerShinies].sort((a, b) =>
+          a.displayName.localeCompare(
+            b.displayName,
+            "pt-BR",
+            {
+              sensitivity: "base",
+            }
+          )
+        ),
+      }))
+      .sort((a, b) => {
+        const countDifference =
+          b.shinies.length - a.shinies.length;
+
+        if (countDifference !== 0) {
+          return countDifference;
+        }
+
+        return a.username.localeCompare(
+          b.username,
+          "pt-BR",
+          {
+            sensitivity: "base",
+          }
+        );
+      });
+  }, [shinies]);
+
+
+  return (
+    <section className="shiny-showcase">
+
+      {/* ===================================================
+          HEADER
+      =================================================== */}
+
+      <header className="shiny-showcase-header">
+
+        <p className="shiny-showcase-kicker">
           Showcase
         </p>
 
-        <h2 className="mt-2 text-2xl font-black tracking-tight text-white">
+        <h2>
           Shinies do time
         </h2>
 
-        <p className="mt-1 text-sm text-gray-500">
-          Todos os shinies capturados pelos membros do NeverTakeBan.
-        </p>
-      </div>
+        <span>
+          Coleção de shinies capturados pelos membros do
+          NeverTakeBan.
+        </span>
+
+      </header>
 
 
-      {/* GRID */}
+      {/* ===================================================
+          PLAYERS
+      =================================================== */}
 
-      {shinies.length > 0 ? (
-        <div
-          className="
-            grid
-            grid-cols-2
-            gap-3
-            sm:grid-cols-3
-            md:grid-cols-4
-            lg:grid-cols-5
-            xl:grid-cols-6
-          "
-        >
-          {shinies.map((shiny) => {
-            const sprite = getSpriteUrl(shiny.pokemonId);
+      {players.length > 0 ? (
 
-            return (
-              <article
-                key={shiny.id}
-                className="
-                  group
-                  relative
-                  overflow-hidden
-                  rounded-2xl
-                  border
-                  border-white/[0.07]
-                  bg-[#080c08]
-                  p-4
-                  transition-all
-                  duration-300
-                  hover:-translate-y-1
-                  hover:border-lime-400/30
-                  hover:bg-[#0b100b]
-                  hover:shadow-2xl
-                  hover:shadow-lime-950/10
-                "
-              >
+        <div className="shiny-showcase-players">
 
-                {/* brilho */}
+          {players.map((player, playerIndex) => (
 
-                <div
-                  className="
-                    pointer-events-none
-                    absolute
-                    -right-10
-                    -top-10
-                    h-24
-                    w-24
-                    rounded-full
-                    bg-lime-400/[0.05]
-                    blur-2xl
-                    transition
-                    duration-300
-                    group-hover:bg-lime-400/[0.12]
-                  "
-                />
+            <section
+              key={player.username}
+              className="showcase-player"
+            >
 
+              {/* =========================================
+                  PLAYER HEADER
+              ========================================= */}
 
-                {/* PLAYER */}
+              <div className="showcase-player-header">
 
-                <div className="relative flex items-center gap-2">
-                  <div className="flex h-6 w-6 items-center justify-center rounded-full border border-white/[0.07] bg-white/[0.03]">
-                    <span className="text-[9px]">
-                      👤
-                    </span>
-                  </div>
+                <div className="showcase-player-title">
 
-                  <p className="min-w-0 truncate text-[10px] font-black uppercase tracking-wider text-gray-500 transition-colors group-hover:text-lime-400">
-                    {shiny.username}
-                  </p>
-                </div>
+                  <span className="showcase-player-number">
+                    {String(playerIndex + 1).padStart(2, "0")}
+                  </span>
 
+                  <span className="showcase-player-line" />
 
-                {/* SPRITE */}
-
-                <div className="relative mt-3 flex h-36 items-center justify-center rounded-xl bg-black/30">
-
-                  {sprite ? (
-                    <Image
-                      src={sprite}
-                      alt={shiny.displayName}
-                      width={150}
-                      height={150}
-                      className="
-                        h-32
-                        w-32
-                        object-contain
-                        transition-transform
-                        duration-300
-                        group-hover:scale-110
-                      "
-                    />
-                  ) : (
-                    <div className="text-4xl text-gray-800">
-                      ?
-                    </div>
-                  )}
-
-                </div>
-
-
-                {/* NOME */}
-
-                <div className="mt-3">
-                  <h3 className="truncate text-sm font-black text-white">
-                    {shiny.displayName}
+                  <h3>
+                    {player.username}
                   </h3>
 
-                  {shiny.encounters !== null && (
-                    <p className="mt-1 text-[10px] text-gray-600">
-                      {shiny.encounters.toLocaleString("pt-BR")} encontros
-                    </p>
+                  <span className="showcase-player-count">
+                    ({player.shinies.length})
+                  </span>
+
+                </div>
+
+              </div>
+
+
+              {/* =========================================
+                  SPRITES
+              ========================================= */}
+
+              <div className="showcase-sprite-area">
+
+                <div className="showcase-sprite-track">
+
+                  {player.shinies.map(
+                    (shiny, shinyIndex) => {
+
+                      const sprite =
+                        getAnimatedSpriteUrl(
+                          shiny.pokemonId
+                        );
+
+                      const encounters =
+                        formatEncounters(
+                          shiny.encounters
+                        );
+
+                      const caughtAt =
+                        formatDate(
+                          shiny.caughtAt
+                        );
+
+                      const isSecret =
+                        shiny.isSecretShiny === true;
+
+
+                      /*
+                       * Os últimos Pokémon da linha
+                       * abrem o card para a esquerda.
+                       *
+                       * Isso evita que o card saia
+                       * da tela.
+                       */
+                      const positionFromEnd =
+                        player.shinies.length -
+                        shinyIndex;
+
+                      const cardSide =
+                        positionFromEnd <= 2
+                          ? "showcase-card-left"
+                          : "";
+
+
+                      return (
+
+                        <article
+                          key={shiny.id}
+                          className={[
+                            "showcase-pokemon",
+
+                            isSecret
+                              ? "showcase-pokemon-secret"
+                              : "",
+
+                            cardSide,
+                          ].join(" ")}
+                        >
+
+                          {/* =================================
+                              AURA
+                          ================================= */}
+
+                          <div className="pokemon-hover-light" />
+
+
+                          {/* =================================
+                              PARTÍCULAS
+                          ================================= */}
+
+                          <span
+                            className="pokemon-spark spark-a"
+                          >
+                            ✦
+                          </span>
+
+                          <span
+                            className="pokemon-spark spark-b"
+                          >
+                            ✧
+                          </span>
+
+                          <span
+                            className="pokemon-spark spark-c"
+                          >
+                            ✦
+                          </span>
+
+                          <span
+                            className="pokemon-spark spark-d"
+                          >
+                            ✧
+                          </span>
+
+                          <span
+                            className="pokemon-spark spark-e"
+                          >
+                            ✦
+                          </span>
+
+                          <span
+                            className="pokemon-spark spark-f"
+                          >
+                            ✧
+                          </span>
+
+
+                          {/* =================================
+                              ESTRELAS
+                          ================================= */}
+
+                          <span className="shiny-star star-1">
+                            ✦
+                          </span>
+
+                          <span className="shiny-star star-2">
+                            ✧
+                          </span>
+
+                          <span className="shiny-star star-3">
+                            ✦
+                          </span>
+
+                          <span className="shiny-star star-4">
+                            ✧
+                          </span>
+
+
+                          {/* =================================
+                              SECRET SHINY
+                          ================================= */}
+
+                          {isSecret && (
+                            <div className="secret-shiny-star">
+
+                              <span className="secret-star-glow" />
+
+                              <span className="secret-star-symbol">
+                                ★
+                              </span>
+
+                            </div>
+                          )}
+
+
+                          {/* =================================
+                              SPRITE
+                          ================================= */}
+
+                          <div className="showcase-sprite-container">
+
+                            {sprite ? (
+
+                              <img
+                                src={sprite}
+                                alt={shiny.displayName}
+                                className="showcase-pokemon-sprite"
+                                loading="lazy"
+                                draggable={false}
+                              />
+
+                            ) : (
+
+                              <span className="showcase-missing-sprite">
+                                ?
+                              </span>
+
+                            )}
+
+                          </div>
+
+
+                          {/* =================================
+                              CARD
+                          ================================= */}
+
+                          <div className="showcase-hover-card">
+
+                            <div className="showcase-hover-card-header">
+
+                              {sprite ? (
+
+                                <img
+                                  src={sprite}
+                                  alt=""
+                                  className="showcase-hover-mini"
+                                  draggable={false}
+                                />
+
+                              ) : (
+
+                                <div className="showcase-hover-mini-placeholder">
+                                  ?
+                                </div>
+
+                              )}
+
+
+                              <div className="showcase-hover-title">
+
+                                <strong>
+                                  {shiny.displayName}
+                                </strong>
+
+                                {isSecret ? (
+
+                                  <span className="secret-label">
+                                    ★ SECRET SHINY
+                                  </span>
+
+                                ) : (
+
+                                  <span>
+                                    ✦ SHINY
+                                  </span>
+
+                                )}
+
+                              </div>
+
+                            </div>
+
+
+                            <div className="showcase-hover-separator" />
+
+
+                            {encounters !== null && (
+
+                              <div className="showcase-hover-stat">
+
+                                <span>
+                                  Encontros
+                                </span>
+
+                                <strong>
+                                  {encounters}
+                                </strong>
+
+                              </div>
+
+                            )}
+
+
+                            {caughtAt && (
+
+                              <div className="showcase-hover-stat">
+
+                                <span>
+                                  Capturado
+                                </span>
+
+                                <strong>
+                                  {caughtAt}
+                                </strong>
+
+                              </div>
+
+                            )}
+
+
+                            {isSecret && (
+
+                              <div className="showcase-secret-message">
+                                <span>✦</span>
+
+                                <p>
+                                  Secret Shiny
+                                </p>
+                              </div>
+
+                            )}
+
+                          </div>
+
+                        </article>
+
+                      );
+                    }
                   )}
+
                 </div>
 
+              </div>
 
-                {/* FOOTER */}
+            </section>
 
-                <div
-                  className="
-                    mt-3
-                    flex
-                    items-center
-                    justify-between
-                    border-t
-                    border-white/[0.05]
-                    pt-3
-                  "
-                >
-                  <span className="text-[9px] font-bold uppercase tracking-wider text-gray-700">
-                    Shiny
-                  </span>
+          ))}
 
-                  <span className="text-[10px] text-gray-700 transition-colors group-hover:text-lime-400">
-                    ✨
-                  </span>
-                </div>
-
-
-                {/* DATA */}
-
-                {shiny.caughtAt && (
-                  <p className="mt-2 text-[9px] text-gray-700">
-                    {formatDate(shiny.caughtAt)}
-                  </p>
-                )}
-
-              </article>
-            );
-          })}
         </div>
+
       ) : (
-        <div
-          className="
-            rounded-2xl
-            border
-            border-dashed
-            border-white/[0.07]
-            bg-white/[0.015]
-            px-6
-            py-16
-            text-center
-          "
-        >
-          <div className="text-4xl">
+
+        /* ===============================================
+           EMPTY
+        =============================================== */
+
+        <div className="showcase-empty">
+
+          <span>
             ✨
-          </div>
+          </span>
 
-          <h3 className="mt-4 text-lg font-black text-white">
+          <strong>
             Nenhum shiny encontrado
-          </h3>
+          </strong>
 
-          <p className="mt-2 text-sm text-gray-600">
-            Ainda não existem shinies registrados no banco de dados.
+          <p>
+            Ainda não existem shinies registrados.
           </p>
+
         </div>
+
       )}
 
     </section>
