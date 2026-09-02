@@ -25,33 +25,22 @@ function Dropdown({
 }: DropdownProps) {
   return (
     <div className="header-dropdown group relative">
-      {/* =====================================================
-          TRIGGER
-      ===================================================== */}
-
+      {/* BOTÃO */}
       <div
         className={[
           "header-dropdown-trigger",
           active ? "active" : "",
         ].join(" ")}
       >
-        <span className="header-nav-emoji">
-          {emoji}
-        </span>
+        <span className="header-nav-emoji">{emoji}</span>
 
         <span>{label}</span>
 
-        <span className="header-chevron">
-          ▾
-        </span>
+        <span className="header-chevron">▾</span>
       </div>
 
-      {/* =====================================================
-          DROPDOWN
-      ===================================================== */}
-
+      {/* DROPDOWN */}
       <div className="header-dropdown-menu">
-
         <div className="header-dropdown-glow" />
 
         <div className="header-dropdown-items">
@@ -103,10 +92,7 @@ export default function Header() {
     <header className="site-header">
       <div className="header-inner">
 
-        {/* =====================================================
-            LOGO
-        ===================================================== */}
-
+        {/* LOGO */}
         <Link
           href="/"
           className="header-brand"
@@ -122,14 +108,10 @@ export default function Header() {
           />
         </Link>
 
-        {/* =====================================================
-            NAVIGATION
-        ===================================================== */}
-
+        {/* NAV */}
         <nav className="header-nav">
 
           {/* NEVER TAKE BAN */}
-
           <Dropdown
             label="NeverTakeBan"
             emoji="🟢"
@@ -149,7 +131,6 @@ export default function Header() {
           />
 
           {/* POKEDEX */}
-
           <Link
             href="/pokedex"
             className={[
@@ -165,7 +146,6 @@ export default function Header() {
           </Link>
 
           {/* TOOLS */}
-
           <Dropdown
             label="Tools"
             emoji="🛠️"
@@ -185,7 +165,6 @@ export default function Header() {
           />
 
           {/* CONTENT */}
-
           <Dropdown
             label="Content"
             emoji="📚"
@@ -210,7 +189,6 @@ export default function Header() {
           />
 
           {/* MEMBERS */}
-
           <Link
             href="/members"
             className={[
@@ -227,10 +205,7 @@ export default function Header() {
 
         </nav>
 
-        {/* =====================================================
-            STATUS
-        ===================================================== */}
-
+        {/* STATUS */}
         <div className="team-status">
           <span className="team-status-dot" />
           Online
